@@ -1795,8 +1795,16 @@ window.resetFileCount = async (fid) => {
 // File Upload Logic
 window.handleDragOver = (e) => { e.preventDefault(); };
 window.handleDragLeave = () => {};
-window.handleDrop = (e) => { e.preventDefault(); if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); };
-window.handleFileUpload = (input) => { if (input.files.length) processFiles(input.files); input.value = ''; };
+window.handleDrop = (e) => { 
+  e.preventDefault(); 
+  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+  if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); 
+};
+window.handleFileUpload = (input) => { 
+  if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+  if (input.files.length) processFiles(input.files); 
+  input.value = ''; 
+};
 
 function extractDateSmart(filename) {
   const monthsAr = {
@@ -2064,6 +2072,9 @@ window.toggleBanUser = async (email, isBanned) => {
 // Auth forms
 document.getElementById('login-form').onsubmit = async (e) => {
   e.preventDefault();
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
   const btn = document.getElementById('login-btn');
   const spinner = document.getElementById('login-spinner');
   const err = document.getElementById('login-error');
