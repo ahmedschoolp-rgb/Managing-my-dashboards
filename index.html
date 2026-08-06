@@ -1888,10 +1888,19 @@ async function processFiles(files) {
   showToast('تمت إضافة الملفات بنجاح', 'success');
 
   if (Notification.permission === 'granted') {
-    new Notification('لوحتي فخور بك! 🎉', {
-      body: 'عاش يا بطل! تم رفع وتسجيل الملفات بنجاح، استمر في العمل.',
-      icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0idXJsKCNnKSIvPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzhiNWNmNiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2VjNDg5OSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGQ9Ik0xNjAgMTYwaDE5Mk0xNjAgMjU2aDE5Mk0xNjAgMzUyaDEyOCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjQ4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4='
-    });
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(registration => {
+        registration.showNotification('لوحتي فخور بك! 🎉', {
+          body: 'عاش يا بطل! تم رفع وتسجيل الملفات بنجاح، استمر في العمل.',
+          icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0idXJsKCNnKSIvPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzhiNWNmNiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2VjNDg5OSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGQ9Ik0xNjAgMTYwaDE5Mk0xNjAgMjU2aDE5Mk0xNjAgMzUyaDEyOCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjQ4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4='
+        });
+      });
+    } else {
+      new Notification('لوحتي فخور بك! 🎉', {
+        body: 'عاش يا بطل! تم رفع وتسجيل الملفات بنجاح، استمر في العمل.',
+        icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0idXJsKCNnKSIvPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzhiNWNmNiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2VjNDg5OSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGQ9Ik0xNjAgMTYwaDE5Mk0xNjAgMjU2aDE5Mk0xNjAgMzUyaDEyOCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjQ4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4='
+      });
+    }
   }
 }
 
@@ -2174,10 +2183,19 @@ onAuthStateChanged(auth, async (user) => {
           const lastSadNotification = localStorage.getItem('last_sad_notification');
           if (lastSadNotification !== todayString) {
             if (Notification.permission === 'granted') {
-              new Notification('لوحتي زعلان ومفتقدك 🥺', {
-                body: 'مفيش شغل اترفع امبارح ومكانك كان فاضي، مستنيك تعوضها وتكسر الدنيا النهارده!',
-                icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0idXJsKCNnKSIvPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzhiNWNmNiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2VjNDg5OSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGQ9Ik0xNjAgMTYwaDE5Mk0xNjAgMjU2aDE5Mk0xNjAgMzUyaDEyOCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjQ4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4='
-              });
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then(registration => {
+                  registration.showNotification('لوحتي زعلان ومفتقدك 🥺', {
+                    body: 'مفيش شغل اترفع امبارح ومكانك كان فاضي، مستنيك تعوضها وتكسر الدنيا النهارده!',
+                    icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0idXJsKCNnKSIvPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzhiNWNmNiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2VjNDg5OSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGQ9Ik0xNjAgMTYwaDE5Mk0xNjAgMjU2aDE5Mk0xNjAgMzUyaDEyOCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjQ4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4='
+                  });
+                });
+              } else {
+                new Notification('لوحتي زعلان ومفتقدك 🥺', {
+                  body: 'مفيش شغل اترفع امبارح ومكانك كان فاضي، مستنيك تعوضها وتكسر الدنيا النهارده!',
+                  icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0idXJsKCNnKSIvPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzhiNWNmNiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2VjNDg5OSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGQ9Ik0xNjAgMTYwaDE5Mk0xNjAgMjU2aDE5Mk0xNjAgMzUyaDEyOCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjQ4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4='
+                });
+              }
               localStorage.setItem('last_sad_notification', todayString);
             }
           }
