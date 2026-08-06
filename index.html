@@ -1,0 +1,2202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"/>
+<title>لوحتي - إدارة إنتاجية اللوحات (Glassmorphism)</title>
+
+<meta property="og:title" content="لوحتي - إدارة إنتاجية اللوحات"/>
+<meta property="og:description" content="نظام متكامل لإدارة ومتابعة المناديب والمفرغين مع تقارير شاملة ومظهر زجاجي عصري"/>
+<meta property="og:type" content="website"/>
+
+<!-- PWA Manifest & Favicon -->
+<link rel="manifest" href="/manifest.json"/>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><defs><linearGradient id='g' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='%234F6CF7'/><stop offset='50%' stop-color='%23A855F7'/><stop offset='100%' stop-color='%23EC4899'/></linearGradient></defs><rect width='512' height='512' rx='128' fill='url(%23g)'/><path d='M128 176 L256 112 L384 176 L256 240 Z' fill='%23ffffff' opacity='0.95'/><path d='M128 240 L256 304 L384 240 L256 176 Z' fill='%23ffffff' opacity='0.75'/><path d='M128 304 L256 368 L384 304 L256 240 Z' fill='%23ffffff' opacity='0.55'/></svg>"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="application-name" content="لوحتي"/>
+<meta name="theme-color" content="#4F6CF7"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="لوحتي"/>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        primary: '#8B5CF6',
+        secondary: '#EC4899',
+        accent: '#06B6D4',
+      },
+      fontFamily: {
+        cairo: ['Cairo', 'sans-serif'],
+      }
+    }
+  }
+}
+</script>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+
+<style>
+* { box-sizing: border-box; }
+body {
+  font-family: 'Cairo', sans-serif;
+  background: #f8fafc;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(253,16%,7%,0.05) 0, transparent 50%), 
+    radial-gradient(at 50% 0%, hsla(225,39%,30%,0.05) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, hsla(339,49%,30%,0.05) 0, transparent 50%);
+  background-attachment: fixed;
+  color: #1e293b;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Glassmorphism Background Gradients */
+.mesh-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: 
+    radial-gradient(circle at 15% 15%, rgba(139, 92, 246, 0.18), transparent 45%),
+    radial-gradient(circle at 85% 20%, rgba(236, 72, 153, 0.15), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgba(6, 182, 212, 0.15), transparent 50%),
+    linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background-attachment: fixed;
+}
+.dark .mesh-bg {
+  background: 
+    radial-gradient(circle at 15% 15%, rgba(139, 92, 246, 0.25), transparent 45%),
+    radial-gradient(circle at 85% 20%, rgba(236, 72, 153, 0.22), transparent 45%),
+    radial-gradient(circle at 50% 80%, rgba(6, 182, 212, 0.18), transparent 50%),
+    linear-gradient(135deg, #090d16 0%, #0f172a 100%);
+}
+
+/* Glassmorphism Cards & Modals */
+.glass-modal, .card, .glass-card {
+  background: rgba(255, 255, 255, 0.85); 
+  backdrop-filter: blur(15px); 
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.6); 
+  border-radius: 1.5rem; 
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03); 
+}
+.dark .glass-modal, .dark .card, .dark .glass-card {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  color: #f1f5f9;
+}
+
+/* Circular Floating KPI Cards */
+.stat-circle, .circle-kpi {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.85); 
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.stat-circle:hover, .circle-kpi:hover { 
+  transform: translateY(-3px) scale(1.05); 
+}
+.dark .stat-circle, .dark .circle-kpi {
+  background: rgba(15, 23, 42, 0.85);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.dark .circle-kpi {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+}
+.circle-kpi:hover {
+  transform: translateY(-6px) scale(1.05);
+  box-shadow: 0 15px 30px -5px rgba(79, 108, 247, 0.25);
+}
+@keyframes floatCircle {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-5px); }
+}
+
+/* Pulse animation for active elements */
+.pulse-glow {
+  animation: pulseGlow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes pulseGlow {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(0.98); }
+}
+
+/* Compact Controls */
+.app-input {
+  width: 100%;
+  padding: 8px 14px;
+  border-radius: 9999px;
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  background: rgba(255, 255, 255, 0.8);
+  font-family: 'Cairo', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.2s;
+  color: #1e293b;
+}
+.dark .app-input {
+  background: rgba(30, 41, 59, 0.8);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f8fafc;
+}
+.app-input:focus {
+  border-color: #4F6CF7;
+  box-shadow: 0 0 0 3px rgba(79, 108, 247, 0.2);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #4F6CF7 0%, #3B82F6 100%);
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  padding: 8px 18px;
+  font-family: 'Cairo', sans-serif;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px 0 rgba(79, 108, 247, 0.35);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px 0 rgba(79, 108, 247, 0.45);
+}
+
+.btn-secondary {
+  background: rgba(241, 245, 249, 0.9);
+  color: #475569;
+  border: 1px solid rgba(203, 213, 225, 0.6);
+  border-radius: 9999px;
+  padding: 8px 18px;
+  font-family: 'Cairo', sans-serif;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.dark .btn-secondary {
+  background: rgba(30, 41, 59, 0.8);
+  color: #cbd5e1;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.btn-secondary:hover {
+  background: rgba(226, 232, 240, 0.9);
+}
+
+/* Animations */
+.fade-in { animation: fadeIn 0.25s ease-out forwards; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Sidebar */
+#sidebar {
+  width: 230px;
+  min-width: 230px;
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  z-index: 40;
+  transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  transform: translateX(100%);
+  overflow-y: auto;
+}
+#sidebar.active {
+  transform: translateX(0);
+}
+
+/* Toast */
+#toast-container {
+  position: fixed; top: 16px; left: 16px; right: 16px;
+  z-index: 9999; display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+}
+.toast {
+  display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+  border-radius: 1rem; font-size: 13px; font-weight: 700;
+  backdrop-filter: blur(12px); box-shadow: 0 10px 25px rgba(0,0,0,0.15); pointer-events: all;
+  animation: fadeIn 0.3s ease-out;
+}
+.toast-success { background: rgba(236, 253, 245, 0.95); color: #065f46; border: 1px solid #a7f3d0; }
+.toast-error { background: rgba(254, 242, 242, 0.95); color: #991b1b; border: 1px solid #fecaca; }
+.toast-info { background: rgba(239, 246, 255, 0.95); color: #1e40af; border: 1px solid #bfdbfe; }
+.dark .toast-success { background: rgba(6, 78, 59, 0.95); color: #a7f3d0; border-color: #047857; }
+.dark .toast-error { background: rgba(127, 29, 29, 0.95); color: #fecaca; border-color: #991b1b; }
+.dark .toast-info { background: rgba(30, 58, 138, 0.95); color: #bfdbfe; border-color: #1d4ed8; }
+
+/* Custom toggle switch */
+.toggle-checkbox:checked {
+  right: 0;
+  border-color: #10B981;
+}
+.toggle-checkbox:checked + .toggle-label {
+  background-color: #10B981;
+}
+
+@media print {
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+  body { background: #fff !important; color: #000 !important; }
+}
+</style>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0idXJsKCNnKSIvPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzhiNWNmNiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2VjNDg5OSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGQ9Ik0xNjAgMTYwaDE5Mk0xNjAgMjU2aDE5Mk0xNjAgMzUyaDEyOCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjQ4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4=">
+<link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0idXJsKCNnKSIvPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzhiNWNmNiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2VjNDg5OSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGQ9Ik0xNjAgMTYwaDE5Mk0xNjAgMjU2aDE5Mk0xNjAgMzUyaDEyOCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjQ4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4=">
+<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22%D9%84%D9%88%D8%AD%D8%AA%D9%8A%20%D9%84%D9%84%D8%A5%D8%A7%D8%AF%D8%A7%D8%B1%D8%A9%22%2C%22short_name%22%3A%22%D9%84%D9%88%D8%AD%D8%AA%D9%8A%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%238B5CF6%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0idXJsKCNnKSIvPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzhiNWNmNiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2VjNDg5OSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGQ9Ik0xNjAgMTYwaDE5Mk0xNjAgMjU2aDE5Mk0xNjAgMzUyaDEyOCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjQ4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4%3D%22%2C%22sizes%22%3A%22192x192%20512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D">
+</head>
+
+<body>
+<!-- Viewing Mode Banner -->
+<div id="viewing-mode-banner" class="hidden fixed top-0 inset-x-0 z-[500] bg-gradient-to-r from-orange-500 to-amber-500 text-white px-4 py-2 flex items-center justify-between shadow-md">
+  <div class="font-bold text-sm flex items-center gap-2">
+    <i class="fa-solid fa-eye animate-pulse"></i>
+    <span id="viewing-mode-text">وضع المراقبة: ...</span>
+  </div>
+  <button onclick="endViewingMode()" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full text-xs font-bold transition">
+    إنهاء المراقبة
+  </button>
+</div>
+<div class="mesh-bg"></div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<!-- Confirm Dialog -->
+<div id="confirm-dialog" class="hidden fixed inset-0 z-[9998] bg-black/40 backdrop-blur-md flex items-center justify-center p-4">
+  <div class="glass-modal w-full max-w-xs rounded-3xl p-5 shadow-2xl text-center">
+    <div id="confirm-icon" class="w-12 h-12 mx-auto rounded-full flex items-center justify-center mb-3 bg-red-100 text-red-500">
+      <i class="fa-solid fa-trash-can text-xl"></i>
+    </div>
+    <h3 id="confirm-title" class="font-black text-base text-gray-800 dark:text-gray-100">تأكيد</h3>
+    <p id="confirm-msg" class="text-gray-500 dark:text-gray-300 text-xs mt-1 mb-4">هل أنت متأكد؟</p>
+    <div class="flex gap-2">
+      <button onclick="closeConfirm()" class="flex-1 btn-secondary text-xs py-2">إلغاء</button>
+      <button id="confirm-ok" class="flex-1 btn-primary bg-red-500 hover:bg-red-600 text-xs py-2">تأكيد</button>
+    </div>
+  </div>
+</div>
+
+<!-- Domain Alert -->
+<div id="domain-alert" class="hidden fixed top-3 left-3 right-3 z-[9999] glass-card p-4 border-2 border-red-400">
+  <div class="flex justify-between items-start gap-2">
+    <div>
+      <p class="font-black text-red-600 text-xs flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation"></i> النطاق غير مصرح به في Firebase</p>
+      <p class="text-[11px] text-gray-600 dark:text-gray-300 mt-1">أضف النطاق في Firebase Console → Authentication → Authorized Domains:</p>
+      <code id="current-domain" class="block mt-1 bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 p-1.5 rounded text-[11px] dir-ltr select-all"></code>
+    </div>
+    <button onclick="document.getElementById('domain-alert').style.display='none'" class="text-gray-400 hover:text-red-600 text-sm">✕</button>
+  </div>
+</div>
+
+<!-- AUTH OVERLAY -->
+<div id="auth-overlay" class="hidden fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-lg">
+  <div class="w-full max-w-sm">
+    <div class="text-center mb-6">
+      <div class="w-14 h-14 bg-gradient-to-tr from-primary to-accent rounded-3xl mx-auto flex items-center justify-center shadow-lg shadow-primary/30 mb-2">
+        <i class="fa-solid fa-layer-group text-white text-2xl"></i>
+      </div>
+      <h1 class="text-2xl font-black text-gray-800 dark:text-white">لوحتي</h1>
+      <p class="text-xs text-gray-400 dark:text-gray-300">نظام إدارة ومتابعة تفريغ اللوح</p>
+    </div>
+
+    <div class="glass-modal rounded-3xl p-6 shadow-2xl border border-white/40 dark:border-white/10">
+      <button onclick="loginWithGoogle()" class="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-full py-2.5 px-4 font-bold text-xs text-gray-700 dark:text-gray-200 hover:bg-gray-50 transition mb-4 shadow-sm">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" class="w-4 h-4" alt="Google"/>
+        الدخول عبر حساب جوجل
+      </button>
+
+      <div class="relative mb-4 text-center">
+        <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200 dark:border-gray-700"></div></div>
+        <span class="relative bg-white dark:bg-slate-900 px-3 text-[11px] text-gray-400">أو بالبريد الإلكتروني</span>
+      </div>
+
+      <!-- Login Form -->
+      <form id="login-form" class="space-y-3">
+        <input type="email" id="login-email" class="app-input" placeholder="البريد الإلكتروني" required/>
+        <input type="password" id="login-pass" class="app-input" placeholder="كلمة المرور" required/>
+        <div id="login-error" class="hidden text-red-500 text-xs text-center bg-red-50 dark:bg-red-950/50 p-2 rounded-xl"></div>
+        <button type="submit" id="login-btn" class="btn-primary w-full py-2.5 flex items-center justify-center gap-2">
+          <span>دخول</span>
+          <i id="login-spinner" class="hidden fa-solid fa-spinner fa-spin text-xs"></i>
+        </button>
+        <div class="flex justify-between items-center text-[11px] pt-2">
+          <a href="#" onclick="toggleAuth('reset')" class="text-primary font-bold hover:underline">نسيت كلمة المرور؟</a>
+          <a href="#" onclick="toggleAuth('register')" class="text-primary font-bold hover:underline">إنشاء حساب جديد</a>
+        </div>
+      </form>
+
+      <!-- Register Form -->
+      <form id="register-form" class="space-y-3 hidden">
+        <input type="text" id="reg-name" class="app-input" placeholder="الاسم الكامل" required/>
+        <input type="email" id="reg-email" class="app-input" placeholder="البريد الإلكتروني" required/>
+        <input type="password" id="reg-pass" class="app-input" placeholder="كلمة المرور (6 أحرف فأكثر)" required/>
+        <div id="reg-error" class="hidden text-red-500 text-xs text-center bg-red-50 p-2 rounded-xl"></div>
+        <div id="reg-success" class="hidden text-emerald-600 text-xs text-center bg-emerald-50 p-2 rounded-xl">تم إرسال رابط التفعيل! تحقق من بريدك.</div>
+        <button type="submit" class="btn-primary w-full bg-emerald-500 hover:bg-emerald-600 py-2.5">إنشاء حساب</button>
+        <p class="text-center text-[11px] text-gray-400 mt-2">لديك حساب؟ <a href="#" onclick="toggleAuth('login')" class="text-primary font-bold underline">تسجيل الدخول</a></p>
+      </form>
+
+      <!-- Reset Form -->
+      <form id="reset-form" class="space-y-3 hidden">
+        <p class="text-xs text-gray-500 text-center mb-2">أدخل بريدك الإلكتروني لاستلام رابط استعادة كلمة المرور</p>
+        <input type="email" id="reset-email" class="app-input" placeholder="البريد الإلكتروني" required/>
+        <div id="reset-msg" class="hidden text-xs text-center p-2 rounded-xl"></div>
+        <button type="submit" class="btn-primary w-full bg-amber-500 hover:bg-amber-600 py-2.5">إرسال رابط الاستعادة</button>
+        <p class="text-center text-[11px] mt-2"><a href="#" onclick="toggleAuth('login')" class="text-primary font-bold underline">عودة للتبويب السابق</a></p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- VERIFICATION OVERLAY -->
+<div id="verification-overlay" class="hidden fixed inset-0 z-[110] bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 text-center">
+  <div class="glass-modal max-w-sm rounded-3xl p-6 shadow-2xl">
+    <div class="w-16 h-16 mx-auto mb-3 bg-blue-100 text-primary rounded-full flex items-center justify-center text-2xl">
+      <i class="fa-solid fa-envelope-open-text"></i>
+    </div>
+    <h2 class="text-lg font-black text-gray-800 dark:text-white mb-2">تفعيل البريد مطلوب</h2>
+    <p class="text-xs text-gray-500 dark:text-gray-300">أرسلنا رابط تفعيل إلى بريدك:</p>
+    <p id="verify-email-display" class="font-bold my-2 text-xs dir-ltr bg-gray-100 dark:bg-slate-800 p-2 rounded-xl text-primary"></p>
+    <p class="text-[11px] text-gray-400 mb-5">يرجى الضغط على الرابط في رسالة البريد الإلكتروني ثم الضغط على زر التحقق أدناه.</p>
+    <div class="space-y-2">
+      <button onclick="checkEmailVerification()" class="btn-primary w-full py-2.5 flex items-center justify-center gap-2">
+        <i class="fa-solid fa-rotate-right"></i>
+        <span>تحقق من التفعيل الان</span>
+      </button>
+      <button onclick="resendVerification()" class="btn-secondary w-full py-2 text-xs">إعادة إرسال الرابط</button>
+      <button onclick="logout()" class="text-xs text-gray-400 hover:underline pt-2">تسجيل الخروج</button>
+    </div>
+  </div>
+</div>
+
+<!-- BANNED OVERLAY -->
+<div id="banned-overlay" class="hidden fixed inset-0 z-[120] bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 text-center">
+  <div class="glass-modal max-w-sm rounded-3xl p-6 shadow-2xl">
+    <div class="w-16 h-16 mx-auto mb-3 bg-red-100 text-red-500 rounded-full flex items-center justify-center text-2xl">
+      <i class="fa-solid fa-ban"></i>
+    </div>
+    <h2 class="text-lg font-black text-red-600 mb-2">الحساب محظور</h2>
+    <p class="text-xs text-gray-500 dark:text-gray-300 mb-5">تم تجميد حسابك من قبل الإدارة. للتواصل والإستفسار:</p>
+    <a href="https://wa.me/201140440601" target="_blank" class="btn-primary bg-emerald-500 hover:bg-emerald-600 w-full py-2.5 flex items-center justify-center gap-2 text-xs">
+      <i class="fa-brands fa-whatsapp text-sm"></i> التواصل مع الدعم الفني
+    </a>
+    <button onclick="logout()" class="text-xs text-gray-400 hover:underline mt-4 block mx-auto">خروج</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app" class="hidden min-h-screen pb-20 lg:pb-6">
+  <aside id="sidebar" class="glass-modal border-l border-white/20 dark:border-white/10 flex flex-col justify-between p-4">
+    <div>
+      <div class="flex items-center gap-3 pb-4 mb-4 border-b border-gray-200 dark:border-gray-800">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-white text-lg shadow-md">
+          <i class="fa-solid fa-layer-group"></i>
+        </div>
+        <div>
+          <h2 class="font-black text-base text-gray-800 dark:text-white leading-tight">لوحتي</h2>
+          <p class="text-[10px] text-primary font-bold">الإصدار المطور</p>
+        </div>
+      </div>
+
+      <nav class="space-y-1">
+        <button onclick="goHome()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition text-primary bg-primary/10 hover:bg-primary/20" id="nav-home">
+          <i class="fa-solid fa-house w-5 text-center"></i> الرئيسية
+        </button>
+        <button onclick="navigateToCategory('delegates')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition" id="nav-delegates">
+          <i class="fa-solid fa-truck-fast w-5 text-center text-blue-500"></i> المناديب
+        </button>
+        <button onclick="navigateToCategory('unloaders')" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition" id="nav-unloaders">
+          <i class="fa-solid fa-dolly w-5 text-center text-emerald-500"></i> المفرغين
+        </button>
+        <button onclick="showDayReport()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition" id="nav-day">
+          <i class="fa-solid fa-calendar-day w-5 text-center text-orange-500"></i> كشف اليوم
+        </button>
+        <button onclick="showMonthlyBest()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition" id="nav-best">
+          <i class="fa-solid fa-trophy w-5 text-center text-amber-500"></i> الأفضل أداءً
+        </button>
+        <button id="nav-admin" onclick="showAdminPanel()" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition hidden">
+          <i class="fa-solid fa-user-shield w-5 text-center text-purple-500"></i> لوحة الإدارة
+        </button>
+      </nav>
+    </div>
+
+    <div class="space-y-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+      <button onclick="toggleTheme()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition">
+        <span class="flex items-center gap-2"><i class="fa-solid fa-palette w-4 text-gray-400"></i> المظهر</span>
+        <i id="theme-icon-sidebar" class="fa-solid fa-moon text-primary"></i>
+      </button>
+      <div class="flex items-center gap-3 px-2 py-1.5 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800/50 rounded-xl transition" onclick="openModal('profile-modal')">
+        <div id="sidebar-profile-initials" class="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-accent text-white flex items-center justify-center font-bold text-xs shadow-sm">؟</div>
+        <img id="sidebar-profile-img" class="w-9 h-9 rounded-full object-cover hidden shadow-sm" alt="profile"/>
+        <div class="overflow-hidden flex-1">
+          <p id="sidebar-username" class="text-xs font-black text-gray-800 dark:text-gray-100 truncate">...</p>
+          <p class="text-[10px] text-gray-400">الملف الشخصي</p>
+        </div>
+      </div>
+      <button onclick="logout()" class="w-full text-xs font-bold py-2.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl flex items-center justify-center gap-2 transition">
+        <i class="fa-solid fa-right-from-bracket"></i> تسجيل الخروج
+      </button>
+    </div>
+  </aside>
+
+  <!-- Sidebar Overlay -->
+  <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 hidden transition-opacity" onclick="toggleSidebar()"></div>
+
+  <!-- Top Navigation Header -->
+  <header class="glass-card sticky top-0 z-20 mx-3 md:mx-6 mt-3 px-4 py-3 flex items-center justify-between no-print rounded-2xl border-t border-l border-white/50 dark:border-white/10 shadow-sm">
+    <div class="flex items-center gap-3">
+      <button id="mobile-menu-btn" onclick="toggleSidebar()" class="w-9 h-9 rounded-xl bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-gray-600 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-slate-700 transition">
+        <i class="fa-solid fa-bars text-sm"></i>
+      </button>
+      <div>
+        <h2 id="topbar-title" class="font-black text-sm text-gray-800 dark:text-white leading-tight">لوحتي</h2>
+        <p id="topbar-subtitle" class="text-[10px] text-gray-400 font-bold">نظرة عامة</p>
+      </div>
+    </div>
+
+    <!-- Currency Selector -->
+    <div class="relative">
+      <button onclick="toggleCurrencyMenu()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary font-black text-xs">
+        <i class="fa-solid fa-coins text-[11px]"></i>
+        <span id="curr-label-top">EGP</span>
+        <i class="fa-solid fa-chevron-down text-[9px]"></i>
+      </button>
+      <div id="currency-menu" class="hidden absolute left-0 mt-2 w-28 glass-modal rounded-2xl shadow-xl z-50 overflow-hidden text-xs">
+        <button onclick="changeCurrency('EGP')" class="w-full text-right px-3 py-2 font-bold hover:bg-primary/10 transition">جنيه (EGP)</button>
+        <button onclick="changeCurrency('SAR')" class="w-full text-right px-3 py-2 font-bold hover:bg-primary/10 transition">ريال (SAR)</button>
+        <button onclick="changeCurrency('USD')" class="w-full text-right px-3 py-2 font-bold hover:bg-primary/10 transition">دولار (USD)</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Content Containers -->
+  <main class="p-3 md:p-6 max-w-7xl mx-auto space-y-5">
+    <!-- HOME VIEW (Redesigned) -->
+    <div id="home-view" class="fade-in">
+      <!-- BENTO GRID LAYOUT -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-5">
+        
+        <!-- Welcome Banner (Spans 8 columns) -->
+        <div class="md:col-span-8 glass-card p-6 relative overflow-hidden flex flex-col justify-center min-h-[160px] bg-gradient-to-br from-primary/10 via-white/40 dark:via-slate-800/40 to-transparent border-t border-l border-white/50 dark:border-white/10 shadow-lg shadow-primary/5">
+          <!-- Decorative shapes -->
+          <div class="absolute -top-12 -right-12 w-40 h-40 bg-primary/20 rounded-full blur-3xl"></div>
+          <div class="absolute -bottom-12 -left-12 w-40 h-40 bg-secondary/20 rounded-full blur-3xl"></div>
+          
+          <div class="relative z-10">
+            <p class="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1">مرحباً بك مجدداً 👋</p>
+            <h1 class="text-3xl font-black text-gray-800 dark:text-white mb-2 tracking-tight"><span id="welcome-name">...</span></h1>
+            <p class="text-xs text-gray-600 dark:text-gray-300 max-w-md leading-relaxed opacity-90">
+              هذه هي لوحة القيادة الخاصة بك. يمكنك من هنا متابعة إنتاجية المناديب والمفرغين وإدارة الملفات بسهولة وسرعة، مع نظرة شاملة على جميع إحصائياتك.
+            </p>
+          </div>
+        </div>
+
+        <!-- Total Cost Card (Spans 4 cols) -->
+        <div class="md:col-span-4 glass-card p-6 flex flex-col justify-center items-center text-center relative overflow-hidden bg-gradient-to-tr from-emerald-500/10 to-transparent border-t border-l border-white/50 dark:border-white/10 shadow-lg shadow-emerald-500/5 group hover:scale-[1.02] transition-transform duration-300">
+          <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-emerald-400/5 via-transparent to-transparent"></div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 font-bold mb-2 relative z-10">إجمالي التكلفة المستحقة</p>
+          <div class="flex items-baseline justify-center gap-1.5 relative z-10">
+             <span id="global-cost-sum" class="text-4xl font-black text-emerald-600 dark:text-emerald-400 tracking-tighter drop-shadow-sm">0</span>
+             <span class="text-sm font-black text-emerald-600/70 dark:text-emerald-400/70" id="cost-currency-label">EGP</span>
+          </div>
+          <p id="hero-sub-info" class="text-[11px] bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 px-3 py-1 rounded-full font-bold mt-4 shadow-inner relative z-10">0 لوحة · 0 ملف</p>
+        </div>
+
+        <!-- Filters (Full width row) -->
+        <div class="md:col-span-12 flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-gray-200/50 dark:border-gray-800/50 pb-3 mt-2 gap-3">
+           <h3 class="text-sm font-black text-gray-700 dark:text-gray-200 flex items-center gap-2">
+             <i class="fa-solid fa-chart-pie text-primary text-xs"></i> الإحصائيات السريعة
+           </h3>
+           <div class="flex gap-2 text-[11px] sm:text-xs">
+              <button onclick="setStatsFilter('all')" id="filter-all" class="px-4 py-1.5 rounded-full font-bold bg-primary text-white shadow-sm transition hover:scale-105">كل الأرشيف</button>
+              <button onclick="setStatsFilter('month')" id="filter-month" class="px-4 py-1.5 rounded-full font-bold bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 transition hover:scale-105 border border-gray-200 dark:border-gray-700">الشهر الحالي</button>
+           </div>
+        </div>
+
+        <!-- 4 KPI Cards (3 cols each) -->
+        <div class="md:col-span-6 lg:col-span-3 glass-card p-5 group hover:-translate-y-1.5 transition-all duration-300 shadow-md hover:shadow-xl hover:shadow-blue-500/10 border-t border-l border-white/60 dark:border-white/10">
+           <div class="flex justify-between items-start mb-5">
+              <div class="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-900/40 text-blue-500 flex items-center justify-center text-xl group-hover:scale-110 group-hover:rotate-3 transition duration-300 shadow-inner">
+                 <i class="fa-solid fa-truck-fast"></i>
+              </div>
+              <span class="text-3xl font-black text-gray-800 dark:text-white tracking-tighter" id="global-delegates-count">0</span>
+           </div>
+           <p class="text-xs font-bold text-gray-500 dark:text-gray-400">المناديب المسجلين</p>
+        </div>
+
+        <div class="md:col-span-6 lg:col-span-3 glass-card p-5 group hover:-translate-y-1.5 transition-all duration-300 shadow-md hover:shadow-xl hover:shadow-orange-500/10 border-t border-l border-white/60 dark:border-white/10">
+           <div class="flex justify-between items-start mb-5">
+              <div class="w-12 h-12 rounded-2xl bg-orange-100 dark:bg-orange-900/40 text-orange-500 flex items-center justify-center text-xl group-hover:scale-110 group-hover:-rotate-3 transition duration-300 shadow-inner">
+                 <i class="fa-solid fa-dolly"></i>
+              </div>
+              <span class="text-3xl font-black text-gray-800 dark:text-white tracking-tighter" id="global-unloaders-count">0</span>
+           </div>
+           <p class="text-xs font-bold text-gray-500 dark:text-gray-400">المفرغين المسجلين</p>
+        </div>
+
+        <div class="md:col-span-6 lg:col-span-3 glass-card p-5 group hover:-translate-y-1.5 transition-all duration-300 shadow-md hover:shadow-xl hover:shadow-emerald-500/10 border-t border-l border-white/60 dark:border-white/10">
+           <div class="flex justify-between items-start mb-5">
+              <div class="w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-500 flex items-center justify-center text-xl group-hover:scale-110 group-hover:rotate-3 transition duration-300 shadow-inner">
+                 <i class="fa-solid fa-layer-group"></i>
+              </div>
+              <span class="text-3xl font-black text-gray-800 dark:text-white tracking-tighter" id="global-plates-count">0</span>
+           </div>
+           <p class="text-xs font-bold text-gray-500 dark:text-gray-400">إجمالي اللوح</p>
+        </div>
+
+        <div class="md:col-span-6 lg:col-span-3 glass-card p-5 group hover:-translate-y-1.5 transition-all duration-300 shadow-md hover:shadow-xl hover:shadow-purple-500/10 border-t border-l border-white/60 dark:border-white/10">
+           <div class="flex justify-between items-start mb-5">
+              <div class="w-12 h-12 rounded-2xl bg-purple-100 dark:bg-purple-900/40 text-purple-500 flex items-center justify-center text-xl group-hover:scale-110 group-hover:-rotate-3 transition duration-300 shadow-inner">
+                 <i class="fa-solid fa-file-excel"></i>
+              </div>
+              <span class="text-3xl font-black text-gray-800 dark:text-white tracking-tighter" id="global-files-count">0</span>
+           </div>
+           <p class="text-xs font-bold text-gray-500 dark:text-gray-400">الملفات المرفوعة</p>
+        </div>
+
+        <!-- Quick Access Section (Spans 12 cols) -->
+        <div class="md:col-span-12 mt-4">
+           <h3 class="text-sm font-black text-gray-700 dark:text-gray-200 mb-4 border-b border-gray-200/50 dark:border-gray-800/50 pb-3 flex items-center gap-2">
+             <i class="fa-solid fa-bolt text-accent text-xs"></i> الوصول السريع
+           </h3>
+           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Delegate Entry -->
+              <div onclick="navigateToCategory('delegates')" class="glass-card p-5 flex items-center justify-between cursor-pointer group hover:bg-blue-50/50 dark:hover:bg-blue-900/20 transition-colors border-t border-l border-white/60 dark:border-white/10 shadow-sm hover:shadow-md">
+                 <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 text-white flex items-center justify-center text-xl shadow-lg shadow-blue-500/30 group-hover:scale-110 transition duration-300">
+                       <i class="fa-solid fa-truck-fast"></i>
+                    </div>
+                    <div>
+                       <h3 class="font-black text-sm md:text-base text-gray-800 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">إدارة المناديب</h3>
+                       <p id="cat-delegates-count" class="text-xs text-gray-500 dark:text-gray-400">0 شخص مسجل</p>
+                    </div>
+                 </div>
+                 <div class="w-8 h-8 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center text-gray-400 group-hover:text-blue-500 group-hover:-translate-x-1 transition duration-300 shadow-sm border border-gray-100 dark:border-gray-700">
+                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                 </div>
+              </div>
+
+              <!-- Unloaders Entry -->
+              <div onclick="navigateToCategory('unloaders')" class="glass-card p-5 flex items-center justify-between cursor-pointer group hover:bg-emerald-50/50 dark:hover:bg-emerald-900/20 transition-colors border-t border-l border-white/60 dark:border-white/10 shadow-sm hover:shadow-md">
+                 <div class="flex items-center gap-4">
+                    <div class="w-14 h-14 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-white flex items-center justify-center text-xl shadow-lg shadow-emerald-500/30 group-hover:scale-110 transition duration-300">
+                       <i class="fa-solid fa-dolly"></i>
+                    </div>
+                    <div>
+                       <h3 class="font-black text-sm md:text-base text-gray-800 dark:text-white mb-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">إدارة المفرغين</h3>
+                       <p id="cat-unloaders-count" class="text-xs text-gray-500 dark:text-gray-400">0 شخص مسجل</p>
+                    </div>
+                 </div>
+                 <div class="w-8 h-8 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center text-gray-400 group-hover:text-emerald-500 group-hover:-translate-x-1 transition duration-300 shadow-sm border border-gray-100 dark:border-gray-700">
+                    <i class="fa-solid fa-arrow-left text-xs"></i>
+                 </div>
+              </div>
+           </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CATEGORY VIEW -->
+    <div id="category-view" class="hidden fade-in space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <button onclick="goHome()" class="text-xs text-primary font-bold hover:underline mb-1 flex items-center gap-1">
+            <i class="fa-solid fa-arrow-right"></i> العودة للرئيسية
+          </button>
+          <h2 id="category-title" class="text-lg font-black text-gray-800 dark:text-white">قائمة الأشخاص</h2>
+          <p id="category-sub-count" class="text-xs text-gray-400">0 أسماء مسجلة</p>
+        </div>
+        <button onclick="openModal('add-person-modal')" class="btn-primary text-xs flex items-center gap-1.5 py-2">
+          <i class="fa-solid fa-user-plus"></i> إضافة اسم جديد
+        </button>
+      </div>
+
+      <!-- Search Bar -->
+      <div class="glass-card p-2 flex items-center gap-2">
+        <i class="fa-solid fa-magnifying-glass text-gray-400 text-xs mr-2"></i>
+        <input id="people-search" oninput="setPeopleSearch(this.value)" class="app-input border-none bg-transparent" placeholder="بحث بالاسم..."/>
+        <button onclick="clearPeopleSearch()" class="text-xs text-gray-400 hover:text-primary font-bold px-2">مسح</button>
+      </div>
+
+      <!-- Grid 4 Columns Desktop, 2 Mobile -->
+      <div id="people-list" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+      <div id="empty-people" class="hidden text-center py-12 glass-card">
+        <i class="fa-regular fa-folder-open text-3xl text-gray-300 dark:text-gray-600 mb-2 block"></i>
+        <p class="text-xs font-bold text-gray-400">لا يوجد أسماء مضافة حالياً</p>
+      </div>
+    </div>
+
+    <!-- PERSON VIEW -->
+    <div id="person-view" class="hidden fade-in space-y-4">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+          <button onclick="goBackToCategory()" class="text-xs text-primary font-bold hover:underline mb-1 flex items-center gap-1">
+            <i class="fa-solid fa-arrow-right"></i> العودة للقائمة
+          </button>
+          <h2 id="person-name-title" class="text-xl font-black text-gray-800 dark:text-white">--</h2>
+          <p class="text-xs text-gray-400">سجل الشهور والأرشيف</p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <!-- Combined Statement Button -->
+          <button onclick="openCombinedStatementModal()" class="btn-secondary text-xs flex items-center gap-1.5 py-2 bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200">
+            <i class="fa-solid fa-file-lines"></i> كشف مجمع
+          </button>
+          <button onclick="openModal('add-month-modal')" class="btn-primary text-xs flex items-center gap-1.5 py-2">
+            <i class="fa-solid fa-calendar-plus"></i> إضافة شهر
+          </button>
+        </div>
+      </div>
+
+      <!-- Grid 4 Columns Desktop, 2 Mobile -->
+      <div id="months-list" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+      <div id="empty-months" class="hidden text-center py-12 glass-card">
+        <i class="fa-solid fa-calendar-xmark text-3xl text-gray-300 dark:text-gray-600 mb-2 block"></i>
+        <p class="text-xs font-bold text-gray-400">لا يوجد شهور لهذا الشخص بعد</p>
+      </div>
+
+      <!-- Performance Chart Section -->
+      <div id="person-chart-section" class="hidden space-y-3 pt-4">
+        <div class="glass-card p-4">
+          <div class="flex justify-between items-center mb-3">
+            <h3 class="text-xs font-black text-gray-700 dark:text-gray-200 flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-primary"></i> تحليل وتطور الإنتاجية
+            </h3>
+            <div class="flex gap-1 text-[11px]">
+              <button onclick="setPersonChartType('bar')" id="pchart-bar" class="px-2 py-0.5 rounded-full font-bold bg-primary text-white">أعمدة</button>
+              <button onclick="setPersonChartType('line')" id="pchart-line" class="px-2 py-0.5 rounded-full font-bold bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-300">خط</button>
+            </div>
+          </div>
+          <div class="h-48"><canvas id="personPerfChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MONTH DASHBOARD VIEW -->
+    <div id="dashboard-view" class="hidden fade-in space-y-4">
+      <div class="flex flex-col md:flex-row gap-4 items-start justify-between">
+        <div>
+          <button onclick="goBackToPerson()" class="text-xs text-primary font-bold hover:underline mb-1 flex items-center gap-1">
+            <i class="fa-solid fa-arrow-right"></i> العودة لشهور الشخص
+          </button>
+          <h2 id="dashboard-title" class="text-xl font-black text-gray-800 dark:text-white">--</h2>
+          <p id="dashboard-subtitle" class="text-xs text-gray-400">--</p>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="flex flex-wrap items-center gap-2 no-print">
+          <!-- WhatsApp Share Button -->
+          <button onclick="shareWhatsApp()" class="btn-primary bg-emerald-500 hover:bg-emerald-600 text-xs flex items-center gap-1.5 py-1.5 px-3">
+            <i class="fa-brands fa-whatsapp text-sm"></i> مشاركة واتساب
+          </button>
+
+          <!-- Toggle Settlement Status -->
+          <div class="flex items-center gap-2 bg-white/60 dark:bg-slate-800/60 p-1.5 rounded-full border border-gray-200 dark:border-gray-700">
+            <span class="text-[11px] font-bold text-gray-600 dark:text-gray-300 mr-1">حالة التصفية:</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" id="settlement-toggle" onchange="toggleSettlementStatus(this.checked)" class="sr-only peer"/>
+              <div class="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+            </label>
+            <span id="settlement-label" class="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">معلق</span>
+          </div>
+
+          <button onclick="exportExcel()" class="btn-secondary text-xs flex items-center gap-1 py-1.5 px-3 text-emerald-600">
+            <i class="fa-solid fa-file-excel"></i> Excel
+          </button>
+          <button onclick="exportImage()" class="btn-secondary text-xs flex items-center gap-1 py-1.5 px-3 text-blue-600">
+            <i class="fa-solid fa-image"></i> صورة
+          </button>
+          <button onclick="window.print()" class="btn-secondary text-xs flex items-center gap-1 py-1.5 px-3 text-gray-600">
+            <i class="fa-solid fa-print"></i> طباعة
+          </button>
+        </div>
+      </div>
+
+      <!-- Month KPIs -->
+      <div class="grid grid-cols-3 gap-3">
+        <div class="glass-card p-3 text-center">
+          <p class="text-[10px] font-bold text-gray-400">إجمالي اللوح</p>
+          <div id="total-count-display" class="text-xl font-black text-primary mt-0.5">0</div>
+        </div>
+        <div class="glass-card p-3 text-center">
+          <p class="text-[10px] font-bold text-gray-400">سعر الألف</p>
+          <div class="flex items-center justify-center gap-1 mt-0.5">
+            <input type="number" id="rate-input" onchange="updateRate(this.value)" class="w-16 text-center font-black text-amber-600 text-lg bg-transparent border-b border-amber-300 outline-none"/>
+            <span class="text-[10px] text-gray-400">EGP</span>
+          </div>
+        </div>
+        <div class="glass-card p-3 text-center">
+          <p class="text-[10px] font-bold text-gray-400">المبلغ الإجمالي</p>
+          <div id="total-cost-display" class="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">0</div>
+        </div>
+      </div>
+
+      <!-- Drop Zone -->
+      <div id="drop-zone" class="glass-card p-4 border-2 border-dashed border-primary/30 text-center cursor-pointer hover:bg-primary/5 transition no-print" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)" onclick="document.getElementById('file-upload').click()">
+        <i class="fa-solid fa-cloud-arrow-up text-2xl text-primary mb-1 block"></i>
+        <p class="text-xs font-bold text-gray-700 dark:text-gray-200">اسحب ملفات الاكسيل هنا أو اضغط للرفع</p>
+        <p class="text-[10px] text-gray-400 mt-0.5">xlsx, xls, csv — حتى 20MB</p>
+        <input id="file-upload" type="file" multiple accept=".xlsx,.xls,.csv" class="hidden" onchange="handleFileUpload(this)"/>
+      </div>
+
+      <!-- Files Table -->
+      <div class="glass-card overflow-hidden">
+        <div class="p-3 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center">
+          <h3 class="text-xs font-black text-gray-700 dark:text-gray-200 flex items-center gap-1.5">
+            <i class="fa-solid fa-list-check text-primary"></i> تفاصيل ملفات الشهر (<span id="files-count-badge">0</span>)
+          </h3>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-right">
+            <thead class="bg-gray-100/50 dark:bg-slate-800/50 text-gray-500">
+              <tr>
+                <th class="p-2.5">الملف</th>
+                <th class="p-2.5 text-center">التاريخ</th>
+                <th class="p-2.5 text-center">الفعلي</th>
+                <th class="p-2.5 text-center text-primary">المحسوب</th>
+                <th class="p-2.5 text-center">المبلغ</th>
+                <th class="p-2.5 text-center no-print">إجراء</th>
+              </tr>
+            </thead>
+            <tbody id="files-table-body" class="divide-y divide-gray-200/50 dark:divide-gray-800/50"></tbody>
+            <tfoot class="bg-gray-100/80 dark:bg-slate-800/80 font-black text-gray-800 dark:text-white">
+              <tr>
+                <td class="p-2.5" colspan="2">الإجمالي الكلي</td>
+                <td id="table-total-original" class="p-2.5 text-center">0</td>
+                <td id="table-total-count" class="p-2.5 text-center text-primary">0</td>
+                <td id="table-total-cost" class="p-2.5 text-center text-emerald-600">0</td>
+                <td class="p-2.5 no-print"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div id="empty-files" class="hidden text-center py-8 text-xs text-gray-400">لا يوجد ملفات مرفوعة بعد</div>
+      </div>
+
+      <!-- PRINT LAYOUT (Required for print & line 742 fix) -->
+      <div class="hidden print-only p-6 space-y-4">
+        <div class="border-b-2 border-black pb-4 text-center">
+          <h1 class="text-2xl font-black">تقرير تفريغ لوح</h1>
+          <p class="text-sm mt-1">الاسم: <span id="print-person-name" class="font-bold">--</span> | الشهر: <span id="print-month-name" class="font-bold">--</span></p>
+          <p class="text-xs text-gray-500 mt-0.5">تاريخ الطباعة: <span id="print-date">--</span></p>
+        </div>
+        <div class="grid grid-cols-3 gap-3 text-center my-4 border p-3">
+          <div><p class="text-xs font-bold">سعر الألف</p><p id="print-rate" class="font-black text-sm">0</p></div>
+          <div><p class="text-xs font-bold">إجمالي اللوح</p><p id="print-total-count" class="font-black text-sm">0</p></div>
+          <div><p class="text-xs font-bold">المبلغ المستحق</p><p id="print-total-cost" class="font-black text-sm">0</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DAY REPORT VIEW -->
+    <div id="day-view" class="hidden fade-in space-y-4">
+      <div class="glass-card p-4">
+        <h2 class="text-base font-black mb-3 flex items-center gap-2 text-gray-800 dark:text-white">
+          <i class="fa-solid fa-calendar-day text-primary"></i> تقرير تفريغ يومي مجمع
+        </h2>
+        <div class="flex flex-wrap items-end gap-2">
+          <div class="flex-1 min-w-[180px]">
+            <label class="block text-xs font-bold mb-1 text-gray-500">اختر اليوم:</label>
+            <input type="date" id="report-date-input" class="app-input"/>
+          </div>
+          <button onclick="generateDayReport()" class="btn-primary text-xs py-2">عرض كشف اليوم</button>
+        </div>
+      </div>
+
+      <div id="day-report-content" class="hidden space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="glass-card p-3 text-center">
+            <span class="text-[10px] font-bold text-gray-400">إجمالي لوح اليوم</span>
+            <div id="day-total-count" class="text-xl font-black text-primary mt-0.5">0</div>
+          </div>
+          <div class="glass-card p-3 text-center">
+            <span class="text-[10px] font-bold text-gray-400">إجمالي مبالغ اليوم</span>
+            <div id="day-total-cost" class="text-xl font-black text-emerald-600 mt-0.5">0</div>
+          </div>
+        </div>
+
+        <div class="glass-card overflow-hidden">
+          <table class="w-full text-xs text-right">
+            <thead class="bg-gray-100 dark:bg-slate-800 text-gray-500">
+              <tr>
+                <th class="p-2.5">الاسم</th>
+                <th class="p-2.5 text-center">الفئة</th>
+                <th class="p-2.5 text-center">العدد</th>
+                <th class="p-2.5 text-center">المبلغ</th>
+              </tr>
+            </thead>
+            <tbody id="day-report-table" class="divide-y divide-gray-200 dark:divide-gray-800"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- MONTHLY BEST VIEW -->
+    <div id="monthly-best-view" class="hidden fade-in space-y-4">
+      <div class="glass-card p-4">
+        <h2 class="text-base font-black mb-3 flex items-center gap-2 text-gray-800 dark:text-white">
+          <i class="fa-solid fa-trophy text-amber-500"></i> ترتيب وحصاد أفضل أداء شهري
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-right">
+            <thead class="bg-gray-100 dark:bg-slate-800 text-gray-500">
+              <tr>
+                <th class="p-2.5">#</th>
+                <th class="p-2.5">الشهر</th>
+                <th class="p-2.5">صاحب الأداء الأعلى</th>
+                <th class="p-2.5 text-center">عدد اللوح</th>
+              </tr>
+            </thead>
+            <tbody id="monthly-performers-table" class="divide-y divide-gray-200 dark:divide-gray-800"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN VIEW -->
+    <div id="admin-dashboard" class="hidden fade-in space-y-4">
+      <div class="glass-card p-4">
+        <h2 class="text-base font-black mb-3 flex items-center gap-2 text-purple-600">
+          <i class="fa-solid fa-user-shield"></i> لوحة الإدارة والمستخدمين
+        </h2>
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-right">
+            <thead class="bg-gray-100 dark:bg-slate-800 text-gray-500">
+              <tr>
+                <th class="p-2.5">المستخدم</th>
+                <th class="p-2.5">البريد</th>
+                <th class="p-2.5">الحالة</th>
+                <th class="p-2.5">الدور</th>
+                <th class="p-2.5 text-center">إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="admin-users-list" class="divide-y divide-gray-200 dark:divide-gray-800"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- MODALS -->
+<!-- Add Person Modal -->
+<div id="add-person-modal" class="hidden fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="glass-modal w-full max-w-xs rounded-3xl p-5 shadow-2xl space-y-4">
+    <h3 class="font-black text-sm text-gray-800 dark:text-white flex items-center gap-2">
+      <i class="fa-solid fa-user-plus text-primary"></i> إضافة اسم جديد
+    </h3>
+    <input type="text" id="new-person-name" class="app-input" placeholder="الاسم الكامل"/>
+    <div class="flex gap-2">
+      <button onclick="closeModal('add-person-modal')" class="flex-1 btn-secondary text-xs py-2">إلغاء</button>
+      <button onclick="addPerson()" class="flex-1 btn-primary text-xs py-2">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Month Modal -->
+<div id="add-month-modal" class="hidden fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="glass-modal w-full max-w-xs rounded-3xl p-5 shadow-2xl space-y-4">
+    <h3 class="font-black text-sm text-gray-800 dark:text-white flex items-center gap-2">
+      <i class="fa-solid fa-calendar-plus text-primary"></i> إضافة شهر جديد
+    </h3>
+    <input type="text" id="new-month-name" class="app-input" placeholder="مثال: يونيو 2026"/>
+    <div class="flex gap-2">
+      <button onclick="closeModal('add-month-modal')" class="flex-1 btn-secondary text-xs py-2">إلغاء</button>
+      <button onclick="addMonth()" class="flex-1 btn-primary text-xs py-2">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Combined Statement Modal -->
+<div id="combined-statement-modal" class="hidden fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="glass-modal w-full max-w-md rounded-3xl p-5 shadow-2xl space-y-4">
+    <div class="flex justify-between items-center">
+      <h3 class="font-black text-sm text-gray-800 dark:text-white flex items-center gap-2">
+        <i class="fa-solid fa-file-excel text-purple-600"></i> الكشف المجمع للشهور
+      </h3>
+      <button onclick="closeModal('combined-statement-modal')" class="text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <p class="text-xs text-gray-500">اختر الشهور المراد دمجها في كشف Excel مجمع واحد:</p>
+    <div class="flex justify-between items-center pt-1 border-t border-gray-200 dark:border-gray-800">
+      <label class="flex items-center gap-2 text-xs font-bold text-gray-700 dark:text-gray-200 cursor-pointer">
+        <input type="checkbox" id="select-all-months" onchange="toggleSelectAllMonths(this.checked)" class="rounded text-primary focus:ring-primary"/>
+        تحديد كافة الشهور
+      </label>
+    </div>
+    <div id="combined-months-checkboxes" class="max-h-48 overflow-y-auto space-y-2 pr-1"></div>
+    <div class="flex gap-2 pt-2">
+      <button onclick="closeModal('combined-statement-modal')" class="flex-1 btn-secondary text-xs py-2">إلغاء</button>
+      <button onclick="exportCombinedExcel()" class="flex-1 btn-primary bg-purple-600 hover:bg-purple-700 text-xs py-2">تصدير الكشف المجمع</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Count Modal -->
+<div id="edit-count-modal" class="hidden fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="glass-modal w-full max-w-xs rounded-3xl p-5 shadow-2xl space-y-4">
+    <h3 class="font-black text-sm text-gray-800 dark:text-white flex items-center gap-2">
+      <i class="fa-solid fa-pen text-amber-500"></i> تعديل عدد اللوح للملف
+    </h3>
+    <input type="number" id="edit-count-input" class="app-input text-center text-lg font-black"/>
+    <div class="flex gap-2">
+      <button onclick="closeModal('edit-count-modal')" class="flex-1 btn-secondary text-xs py-2">إلغاء</button>
+      <button id="save-edit-btn" class="flex-1 btn-primary bg-amber-500 hover:bg-amber-600 text-xs py-2">تحديث</button>
+    </div>
+  </div>
+</div>
+
+<!-- Profile Modal -->
+<div id="profile-modal" class="hidden fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+  <div class="glass-modal w-full max-w-xs rounded-3xl p-5 shadow-2xl space-y-3">
+    <h3 class="font-black text-sm text-gray-800 dark:text-white">تعديل الملف الشخصي</h3>
+    <input type="text" id="profile-name-input" class="app-input" placeholder="الاسم الكامل"/>
+    <input type="email" id="profile-email-display" class="app-input bg-gray-100 opacity-60" readonly/>
+    <div class="flex gap-2 pt-2">
+      <button onclick="closeModal('profile-modal')" class="flex-1 btn-secondary text-xs py-2">إلغاء</button>
+      <button onclick="saveProfile()" class="flex-1 btn-primary text-xs py-2">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Global Loader -->
+<div id="global-loader" class="fixed inset-0 z-[300] bg-slate-900/70 backdrop-blur-md flex flex-col items-center justify-center text-white">
+  <div class="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin mb-3"></div>
+  <p class="font-bold text-xs">جاري التزامن مع السحابة...</p>
+</div>
+
+<!-- FIREBASE & JS APP LOGIC -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { 
+  getAuth, GoogleAuthProvider, signInWithPopup, 
+  signInWithEmailAndPassword, createUserWithEmailAndPassword, 
+  sendEmailVerification, sendPasswordResetEmail, 
+  onAuthStateChanged, signOut, setPersistence, browserLocalPersistence
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { 
+  getFirestore, collection, doc, setDoc, getDoc, getDocs, 
+  updateDoc, deleteDoc, serverTimestamp 
+} from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+const firebaseConfig = { 
+  apiKey: "AIzaSyAOIAos9aILBtPbHmdACWCtSYMGZLA8v2Q", 
+  authDomain: "plates-manager.firebaseapp.com", 
+  projectId: "plates-manager", 
+  storageBucket: "plates-manager.firebasestorage.app", 
+  messagingSenderId: "379225353402", 
+  appId: "1:379225353402:web:49a848b302aeb75fa7e683" 
+};
+
+// تشغيل وتفعيل قاعدة البيانات
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+setPersistence(auth, browserLocalPersistence).catch(console.error);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+
+// المجلدات اللي متخزن فيها بياناتك القديمة والجديدة
+const APP_NAMESPACES = ['my-plates-app', 'my-plates-app-v2'];
+let appNamespace = localStorage.getItem('app_namespace') || 'my-plates-app';
+
+// إيميلك الأساسي كمدير للنظام
+const OWNER_EMAIL = 'userahmed@gmail.com';
+
+let currentUser = null;
+let appData = { delegates: {}, unloaders: {} };
+let currentCategory = null;
+let currentPersonId = null;
+let currentMonthId = null;
+let peopleSearchQuery = '';
+let activeCurrency = localStorage.getItem('app_curr') || 'EGP';
+const currencyRates = { EGP: 1, SAR: 13.1, USD: 49.5 };
+const currencyLabels = { EGP: 'جنيه', SAR: 'ريال', USD: 'دولار' };
+
+let isViewingUser = false;
+let viewingUserId = null;
+let viewingUserName = '';
+
+window.viewUser = async (email, name) => {
+  isViewingUser = true;
+  viewingUserId = email;
+  viewingUserName = name;
+  document.getElementById('viewing-mode-text').textContent = `وضع المراقبة: ${name}`;
+  document.getElementById('viewing-mode-banner').classList.remove('hidden');
+  await loadDataCloud();
+  goHome();
+};
+
+window.endViewingMode = () => {
+  location.reload();
+};
+
+function formatMoney(egpAmount) {
+  if (activeCurrency === 'EGP') {
+    return Number(egpAmount || 0).toLocaleString(undefined, { maximumFractionDigits: 1 });
+  }
+  return (Number(egpAmount || 0) / currencyRates[activeCurrency]).toLocaleString(undefined, { maximumFractionDigits: 2 });
+}
+
+let charts = {};
+let globalStatsFilter = 'all';
+let personChartType = 'bar';
+
+window.showToast = function(msg, type = 'info', duration = 3000) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<span class="flex-1">${msg}</span>`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), duration);
+};
+
+window.showConfirm = function(title, msg, onOk) {
+  const d = document.getElementById('confirm-dialog');
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-msg').textContent = msg;
+  d.classList.remove('hidden');
+  document.getElementById('confirm-ok').onclick = () => { d.classList.add('hidden'); onOk(); };
+};
+window.closeConfirm = () => document.getElementById('confirm-dialog').classList.add('hidden');
+
+function toggleLoader(show) { document.getElementById('global-loader').classList.toggle('hidden', !show); }
+function userKey(email) { return String(email || '').trim().toLowerCase(); }
+
+window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
+window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
+
+window.toggleAuth = (mode) => {
+  ['login-form','register-form','reset-form'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  ['login-error','reg-error','reg-success'].forEach(id => document.getElementById(id).classList.add('hidden'));
+  if (mode === 'register') document.getElementById('register-form').classList.remove('hidden');
+  else if (mode === 'reset') document.getElementById('reset-form').classList.remove('hidden');
+  else document.getElementById('login-form').classList.remove('hidden');
+};
+
+window.toggleTheme = () => {
+  const isDark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('theme', isDark ? 'dark' : 'light');
+  document.getElementById('theme-icon-sidebar').className = isDark ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon text-primary';
+};
+
+window.toggleSidebar = () => {
+  const sb = document.getElementById('sidebar');
+  const ov = document.getElementById('sidebar-overlay');
+  const active = sb.classList.toggle('active');
+  ov.classList.toggle('hidden', !active);
+};
+
+window.logout = () => signOut(auth).then(() => location.reload());
+
+window.loginWithGoogle = async () => {
+  try { await signInWithPopup(auth, googleProvider); }
+  catch (err) {
+    if (err?.code === 'auth/unauthorized-domain') showDomainAlert();
+    else showToast('فشل تسجيل الدخول عبر جوجل', 'error');
+  }
+};
+
+function showDomainAlert() {
+  document.getElementById('current-domain').textContent = window.location.hostname;
+  document.getElementById('domain-alert').style.display = 'block';
+}
+
+window.resendVerification = async () => {
+  if (!auth.currentUser) return;
+  try {
+    await sendEmailVerification(auth.currentUser);
+    showToast('تم إرسال رابط التفعيل مجدداً', 'success');
+  } catch(e) { showToast('يرجى الانتظار ثم المحاولة لاحقاً', 'error'); }
+};
+
+window.checkEmailVerification = async () => {
+  if (!auth.currentUser) return;
+  toggleLoader(true);
+  try {
+    await auth.currentUser.reload();
+    if (auth.currentUser.emailVerified) {
+      showToast('تم التحقق من التفعيل بنجاح ✅', 'success');
+      location.reload();
+    } else {
+      showToast('لم يتم تفعيل البريد بعد، يرجى فتح رابط التفعيل أولاً', 'error');
+    }
+  } catch(e) {
+    showToast('خطأ أثناء التحقق', 'error');
+  } finally {
+    toggleLoader(false);
+  }
+};
+
+window.toggleCurrencyMenu = () => document.getElementById('currency-menu').classList.toggle('hidden');
+window.changeCurrency = (curr) => {
+  activeCurrency = curr;
+  localStorage.setItem('app_curr', curr);
+  document.getElementById('curr-label-top').textContent = curr;
+  const cLabel = document.getElementById('cost-currency-label');
+  if (cLabel) cLabel.textContent = curr;
+  document.getElementById('currency-menu').classList.add('hidden');
+  if (currentMonthId) renderDashboard();
+  calculateGlobalStats();
+};
+
+// Data Sync
+let appLastUpdated = null;
+
+async function loadDataFromAnyNamespace(key) {
+  for (const ns of APP_NAMESPACES) {
+    try {
+      const snap = await getDoc(doc(db, 'artifacts', ns, 'public', 'data', 'users_data', key));
+      if (snap.exists() && snap.data().data) {
+        appNamespace = ns;
+        localStorage.setItem('app_namespace', ns);
+        appLastUpdated = snap.data().lastUpdated || null;
+        return JSON.parse(snap.data().data);
+      }
+    } catch(e) { console.error('namespace load', ns, e); }
+  }
+  return { delegates: {}, unloaders: {} };
+}
+
+async function loadDataCloud() {
+  if (!auth.currentUser) return;
+  toggleLoader(true);
+  let key = userKey(currentUser.id);
+  if (isViewingUser && viewingUserId) {
+    key = userKey(viewingUserId);
+  }
+  try {
+    appData = await loadDataFromAnyNamespace(key);
+    calculateGlobalStats();
+  } catch(e) { console.error('Load fail', e); }
+  finally { toggleLoader(false); }
+}
+
+async function saveToCloud() {
+  if (!auth.currentUser) return;
+  let key = userKey(currentUser.id);
+  if (isViewingUser && viewingUserId) {
+    key = userKey(viewingUserId);
+  }
+  try {
+    await setDoc(doc(db, 'artifacts', appNamespace, 'public', 'data', 'users_data', key), {
+      data: JSON.stringify(appData), lastUpdated: new Date().toISOString()
+    }, { merge: true });
+    calculateGlobalStats();
+  } catch(e) { console.error('Save fail', e); }
+}
+
+const monthsAr = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+
+window.setStatsFilter = (filter) => {
+  globalStatsFilter = filter;
+  document.getElementById('filter-all').className = filter === 'all' ? 'px-4 py-1.5 rounded-full font-bold bg-primary text-white shadow-sm transition hover:scale-105' : 'px-4 py-1.5 rounded-full font-bold bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 transition hover:scale-105 border border-gray-200 dark:border-gray-700';
+  document.getElementById('filter-month').className = filter === 'month' ? 'px-4 py-1.5 rounded-full font-bold bg-primary text-white shadow-sm transition hover:scale-105' : 'px-4 py-1.5 rounded-full font-bold bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 transition hover:scale-105 border border-gray-200 dark:border-gray-700';
+  calculateGlobalStats();
+};
+
+function calculateGlobalStats() {
+  const now = new Date();
+  const currentMonthName = monthsAr[now.getMonth()];
+  const delegatesCount = Object.keys(appData.delegates || {}).length;
+  const unloadersCount = Object.keys(appData.unloaders || {}).length;
+  let totalPlates = 0, totalCost = 0, totalFiles = 0;
+
+  ['delegates', 'unloaders'].forEach(cat => {
+    Object.values(appData[cat] || {}).forEach(person => {
+      Object.values(person.months || {}).forEach(m => {
+        const isThisMonth = (m.name || '').includes(currentMonthName);
+        if (globalStatsFilter === 'all' || isThisMonth) {
+          const monthPlates = (m.files || []).reduce((s, f) => s + (f.usedCount || 0), 0);
+          totalPlates += monthPlates;
+          totalCost += (monthPlates / 1000) * (m.rate || 100);
+          totalFiles += (m.files || []).length;
+        }
+      });
+    });
+  });
+
+  document.getElementById('global-delegates-count').textContent = delegatesCount;
+  document.getElementById('global-unloaders-count').textContent = unloadersCount;
+  document.getElementById('global-plates-count').textContent = totalPlates.toLocaleString();
+  document.getElementById('global-files-count').textContent = totalFiles.toLocaleString();
+  document.getElementById('global-cost-sum').textContent = formatMoney(totalCost);
+  document.getElementById('hero-sub-info').textContent = `${totalPlates.toLocaleString()} لوحة · ${totalFiles} ملف`;
+  document.getElementById('cat-delegates-count').textContent = delegatesCount + ' شخص مسجل';
+  document.getElementById('cat-unloaders-count').textContent = unloadersCount + ' شخص مسجل';
+}
+
+// Navigation
+function showView(id) {
+  ['home-view','category-view','person-view','dashboard-view','day-view','monthly-best-view','admin-dashboard']
+    .forEach(v => document.getElementById(v).classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  document.getElementById('sidebar').classList.remove('active');
+  document.getElementById('sidebar-overlay').classList.add('hidden');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+window.goHome = () => {
+  currentCategory = null; currentPersonId = null; currentMonthId = null;
+  showView('home-view');
+  calculateGlobalStats();
+};
+
+window.navigateToCategory = (cat) => {
+  currentCategory = cat;
+  const title = cat === 'delegates' ? 'المناديب' : 'المفرغين';
+  document.getElementById('category-title').textContent = 'قائمة ' + title;
+  renderPeople();
+  showView('category-view');
+};
+
+window.goBackToCategory = () => { if (currentCategory) navigateToCategory(currentCategory); else goHome(); };
+window.goBackToPerson = () => { if (currentPersonId) navigateToPerson(currentPersonId); else goHome(); };
+
+window.navigateToPerson = (pid) => {
+  currentPersonId = pid;
+  const name = appData[currentCategory][pid].name;
+  document.getElementById('person-name-title').textContent = name;
+  renderMonths();
+  renderPersonChart();
+  showView('person-view');
+};
+
+window.navigateToMonth = (mid) => {
+  currentMonthId = mid;
+  const month = appData[currentCategory][currentPersonId].months[mid];
+  renderDashboard();
+  showView('dashboard-view');
+};
+
+// People
+window.setPeopleSearch = (val) => { peopleSearchQuery = (val || '').trim().toLowerCase(); renderPeople(); };
+window.clearPeopleSearch = () => { peopleSearchQuery = ''; document.getElementById('people-search').value = ''; renderPeople(); };
+
+function renderPeople() {
+  const list = document.getElementById('people-list');
+  list.innerHTML = '';
+  const people = appData[currentCategory] || {};
+  let ids = Object.keys(people);
+  if (peopleSearchQuery) ids = ids.filter(id => (people[id]?.name || '').toLowerCase().includes(peopleSearchQuery));
+
+  document.getElementById('empty-people').classList.toggle('hidden', ids.length > 0);
+  document.getElementById('category-sub-count').textContent = ids.length + ' أسماء مسجلة';
+
+  const cardColors = ['border-blue-500/30', 'border-emerald-500/30', 'border-orange-500/30', 'border-purple-500/30'];
+
+  ids.forEach((id, idx) => {
+    const p = people[id];
+    const monthCount = Object.keys(p.months || {}).length;
+    const totalPlates = Object.values(p.months || {}).reduce((s, m) => s + (m.files || []).reduce((fs, f) => fs + (f.usedCount || 0), 0), 0);
+    const borderColor = cardColors[idx % cardColors.length];
+
+    const card = document.createElement('div');
+    card.className = `glass-card p-4 rounded-3xl cursor-pointer hover:-translate-y-1 transition duration-300 border-t border-l border-white/60 dark:border-white/10 shadow-sm hover:shadow-lg ${borderColor.replace('border-', 'shadow-').replace('/30', '/10')} group`;
+    card.onclick = () => navigateToPerson(id);
+    card.innerHTML = `
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3 overflow-hidden">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-700 text-gray-700 dark:text-gray-200 font-black text-sm flex items-center justify-center flex-shrink-0 shadow-inner group-hover:scale-110 transition duration-300">
+            ${(p.name || '?').charAt(0)}
+          </div>
+          <div class="overflow-hidden">
+            <h4 class="font-black text-sm text-gray-800 dark:text-white truncate group-hover:text-primary transition-colors">${p.name}</h4>
+            <p class="text-[10px] text-gray-500 font-bold mt-0.5">${monthCount} شهور · <span class="text-emerald-600 dark:text-emerald-400">${totalPlates.toLocaleString()} لوحة</span></p>
+          </div>
+        </div>
+        <button onclick="deletePerson('${id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 text-xs transition">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+window.addPerson = async () => {
+  const n = document.getElementById('new-person-name').value.trim();
+  if (!n) return showToast('يرجى إدخال الاسم', 'error');
+  const id = 'p_' + Date.now();
+  appData[currentCategory][id] = { name: n, months: {} };
+  await saveToCloud();
+  showToast('تمت إضافة الاسم بنجاح', 'success');
+  renderPeople();
+  closeModal('add-person-modal');
+  document.getElementById('new-person-name').value = '';
+};
+
+window.deletePerson = (id, e) => {
+  e.stopPropagation();
+  showConfirm('حذف الاسم', 'سيتم حذف الاسم بجميع شهوره وملفاته', async () => {
+    delete appData[currentCategory][id];
+    await saveToCloud();
+    showToast('تم الحذف بنجاح', 'success');
+    renderPeople();
+  });
+};
+
+// Months
+function renderMonths() {
+  const list = document.getElementById('months-list');
+  list.innerHTML = '';
+  const months = appData[currentCategory][currentPersonId].months || {};
+  const ids = Object.keys(months).sort().reverse();
+  document.getElementById('empty-months').classList.toggle('hidden', ids.length > 0);
+
+  ids.forEach((id) => {
+    const m = months[id];
+    const totalPlates = (m.files || []).reduce((s, f) => s + (f.usedCount || 0), 0);
+    const totalCost = (totalPlates / 1000) * (m.rate || 100);
+    const isSettled = !!m.isSettled;
+
+    const card = document.createElement('div');
+    card.className = 'glass-card p-4 rounded-3xl cursor-pointer hover:-translate-y-1 transition duration-300 border-t border-l border-white/60 dark:border-white/10 shadow-sm hover:shadow-lg flex flex-col justify-between group';
+    card.onclick = () => navigateToMonth(id);
+    card.innerHTML = `
+      <div>
+        <div class="flex justify-between items-start mb-3">
+          <span class="font-black text-sm text-gray-800 dark:text-white group-hover:text-primary transition-colors">${m.name}</span>
+          ${isSettled 
+            ? '<span class="bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px] font-black px-2.5 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">✓ مُصفى</span>'
+            : '<span class="bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] font-black px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-800">⏳ معلق</span>'}
+        </div>
+        <div class="space-y-1 mb-4">
+          <div class="flex justify-between text-xs">
+            <span class="text-gray-500">إجمالي اللوح</span>
+            <span class="font-black text-gray-800 dark:text-gray-200">${totalPlates.toLocaleString()}</span>
+          </div>
+          <div class="flex justify-between text-xs">
+            <span class="text-gray-500">المبلغ</span>
+            <span class="font-black text-emerald-600 dark:text-emerald-400">${formatMoney(totalCost)}</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end pt-3 border-t border-gray-100 dark:border-gray-800">
+        <button onclick="deleteMonth('${id}', event)" class="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 text-xs transition">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
+    `;
+    list.appendChild(card);
+  });
+}
+
+window.addMonth = async () => {
+  const n = document.getElementById('new-month-name').value.trim();
+  if (!n) return showToast('يرجى إدخال اسم الشهر', 'error');
+  const id = 'm_' + Date.now();
+  appData[currentCategory][currentPersonId].months[id] = { name: n, rate: 100, isSettled: false, files: [] };
+  await saveToCloud();
+  showToast('تمت إضافة الشهر', 'success');
+  renderMonths();
+  closeModal('add-month-modal');
+  document.getElementById('new-month-name').value = '';
+};
+
+window.deleteMonth = (id, e) => {
+  e.stopPropagation();
+  showConfirm('حذف الشهر', 'سيتم حذف الشهر بجميع ملفاته', async () => {
+    delete appData[currentCategory][currentPersonId].months[id];
+    await saveToCloud();
+    showToast('تم الحذف', 'success');
+    renderMonths();
+  });
+};
+
+// Combined Statement Feature
+window.openCombinedStatementModal = () => {
+  const container = document.getElementById('combined-months-checkboxes');
+  container.innerHTML = '';
+  const months = appData[currentCategory]?.[currentPersonId]?.months || {};
+  const ids = Object.keys(months);
+
+  if (!ids.length) return showToast('لا توجد شهور لهذا الشخص للتجميع', 'error');
+
+  ids.forEach(mid => {
+    const m = months[mid];
+    const item = document.createElement('label');
+    item.className = 'flex items-center justify-between p-2 rounded-xl bg-gray-100/60 dark:bg-slate-800/60 text-xs cursor-pointer';
+    item.innerHTML = `
+      <span class="font-bold text-gray-800 dark:text-gray-200">${m.name}</span>
+      <input type="checkbox" value="${mid}" class="month-combine-checkbox rounded text-purple-600"/>
+    `;
+    container.appendChild(item);
+  });
+
+  openModal('combined-statement-modal');
+};
+
+window.toggleSelectAllMonths = (checked) => {
+  document.querySelectorAll('.month-combine-checkbox').forEach(cb => cb.checked = checked);
+};
+
+window.exportCombinedExcel = () => {
+  const selectedMids = Array.from(document.querySelectorAll('.month-combine-checkbox:checked')).map(cb => cb.value);
+  if (!selectedMids.length) return showToast('اختر شهر واحد على الأقل', 'error');
+
+  const p = appData[currentCategory][currentPersonId];
+  const today = new Date().toLocaleDateString('ar-EG');
+
+  const bThick = { 
+    top: { style: "thick", color: { auto: 1 } }, 
+    bottom: { style: "thick", color: { auto: 1 } }, 
+    left: { style: "thick", color: { auto: 1 } }, 
+    right: { style: "thick", color: { auto: 1 } } 
+  };
+  const titleStyle = { font: { bold: true, sz: 16 }, alignment: { horizontal: "center", vertical: "center" } };
+  const headerStyle = { font: { bold: true, sz: 14 }, alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "D9D9D9" } }, border: bThick };
+  const dataStyle = { font: { sz: 12, bold: true }, alignment: { horizontal: "center", vertical: "center" }, border: bThick };
+  const totalStyle = { font: { bold: true, sz: 14 }, alignment: { horizontal: "center", vertical: "center" }, border: bThick };
+
+  const data = [];
+  data.push([{ v: `الكشف المجمع - ${p.name}`, s: titleStyle }, { v: "", s: titleStyle }, { v: "", s: titleStyle }, { v: "", s: titleStyle }]);
+  data.push([{ v: `تاريخ الاستخراج: ${today}`, s: titleStyle }, { v: "", s: titleStyle }, { v: "", s: titleStyle }, { v: "", s: titleStyle }]);
+  data.push([{ v: "", s: titleStyle }, { v: "", s: titleStyle }, { v: "", s: titleStyle }, { v: "", s: titleStyle }]);
+  data.push([
+    { v: "الشهر", s: headerStyle }, 
+    { v: "عدد الملفات", s: headerStyle }, 
+    { v: "إجمالي اللوح", s: headerStyle }, 
+    { v: "المبلغ (EGP)", s: headerStyle }
+  ]);
+
+  let grandPlates = 0, grandCostEGP = 0;
+
+  selectedMids.forEach(mid => {
+    const m = p.months[mid];
+    const totalPlates = (m.files || []).reduce((s, f) => s + (f.usedCount || 0), 0);
+    const costEGP = (totalPlates / 1000) * Number(m.rate || 100);
+
+    grandPlates += totalPlates;
+    grandCostEGP += costEGP;
+
+    data.push([
+      { v: m.name + (m.isSettled ? " (مُصفى)" : " (معلق)"), s: dataStyle },
+      { v: (m.files || []).length, s: dataStyle, t: 'n' },
+      { v: totalPlates, s: dataStyle, t: 'n' },
+      { v: costEGP, s: dataStyle, t: 'n' }
+    ]);
+  });
+
+  data.push([
+    { v: 'الإجمالي الكلي', s: totalStyle },
+    { v: '', s: totalStyle },
+    { v: grandPlates, s: totalStyle, t: 'n' },
+    { v: grandCostEGP, s: totalStyle, t: 'n' }
+  ]);
+
+  if (activeCurrency !== 'EGP') {
+    const convertedTotal = grandCostEGP / currencyRates[activeCurrency];
+    data.push([
+      { v: `الإجمالي بعد التحويل (${activeCurrency})`, s: totalStyle },
+      { v: '', s: totalStyle },
+      { v: '', s: totalStyle },
+      { v: convertedTotal, s: totalStyle, t: 'n' }
+    ]);
+  }
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{ wch: 30 }, { wch: 15 }, { wch: 18 }, { wch: 22 }];
+  ws['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 3 } }
+  ];
+
+  const wb = XLSX.utils.book_new();
+  wb.Workbook = { Views: [{ RTL: true }] };
+  XLSX.utils.book_append_sheet(wb, ws, "الكشف المجمع");
+  XLSX.writeFile(wb, `الكشف_المجمع_${p.name}.xlsx`);
+
+  showToast('تم تصدير الكشف المجمع بنجاح ✅', 'success');
+  closeModal('combined-statement-modal');
+};
+
+// WhatsApp Quick Share Feature
+window.shareWhatsApp = () => {
+  const m = appData[currentCategory][currentPersonId].months[currentMonthId];
+  const p = appData[currentCategory][currentPersonId];
+  const totalPlates = (m.files || []).reduce((s, f) => s + (f.usedCount || 0), 0);
+  const totalCostEGP = (totalPlates / 1000) * (m.rate || 100);
+
+  const text = 
+`📌 *تفريغ لوح - ${p.name}*
+📅 *الشهر:* ${m.name}
+📦 *إجمالي اللوح:* ${totalPlates.toLocaleString()}
+💰 *سعر الألف:* ${m.rate || 100} EGP
+💵 *المبلغ المستحق:* ${formatMoney(totalCostEGP)}
+✅ *حالة التصفية:* ${m.isSettled ? 'مُصفى ✅' : 'معلق ⏳'}`;
+
+  window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+};
+
+// Export Single Month Excel
+window.exportExcel = () => {
+  // 1. جلب بيانات الشهر والشخص الحالي
+  const m = appData[currentCategory][currentPersonId].months[currentMonthId];
+  const p = appData[currentCategory][currentPersonId];
+  const today = new Date().toLocaleDateString('ar-EG');
+  
+  // 2. تعريف ستايلات الإكسيل (الحدود، الألوان، الخطوط)
+  const bThick = { 
+    top: { style: "thick", color: { auto: 1 } }, 
+    bottom: { style: "thick", color: { auto: 1 } }, 
+    left: { style: "thick", color: { auto: 1 } }, 
+    right: { style: "thick", color: { auto: 1 } } 
+  };
+  const titleStyle = { font: { bold: true, sz: 16 }, alignment: { horizontal: "center", vertical: "center" } };
+  const headerStyle = { font: { bold: true, sz: 14 }, alignment: { horizontal: "center", vertical: "center" }, fill: { fgColor: { rgb: "D9D9D9" } }, border: bThick };
+  const dataStyle = { font: { sz: 12, bold: true }, alignment: { horizontal: "center", vertical: "center" }, border: bThick };
+  const totalStyle = { font: { bold: true, sz: 14 }, alignment: { horizontal: "center", vertical: "center" }, border: bThick };
+
+  // 3. بناء المصفوفة (Array of Arrays)
+  const data = [];
+  
+  // صفوف العناوين المدمجة
+  data.push([{ v: `تقرير شهر ${m.name}`, s: titleStyle }, { v: "", s: titleStyle }, { v: "", s: titleStyle }, { v: "", s: titleStyle }]);
+  data.push([{ v: `الاسم: ${p.name}`, s: titleStyle }, { v: "", s: titleStyle }, { v: "", s: titleStyle }, { v: "", s: titleStyle }]);
+  data.push([{ v: `تاريخ استخراج التقرير: ${today}`, s: titleStyle }, { v: "", s: titleStyle }, { v: "", s: titleStyle }, { v: "", s: titleStyle }]);
+  
+  // صف العناوين الرئيسية للجدول
+  data.push([
+    { v: "اسم الملف", s: headerStyle }, 
+    { v: "التاريخ", s: headerStyle }, 
+    { v: "عدد اللوح", s: headerStyle }, 
+    { v: "المبلغ (EGP)", s: headerStyle }
+  ]);
+
+  let totalCount = 0, totalMoney = 0;
+  
+  // ترتيب ووضع الملفات
+  (m.files||[]).slice().sort((a,b)=>(a.sortVal||0)-(b.sortVal||0)).forEach(f => {
+    const costEGP = ((f.usedCount||0)/1000) * Number(m.rate||100);
+    totalCount += (f.usedCount||0);
+    totalMoney += costEGP;
+    
+    data.push([
+      { v: f.name||'', s: dataStyle }, 
+      { v: f.dateDisplay||'', s: dataStyle }, 
+      { v: f.usedCount||0, s: dataStyle, t: 'n' }, 
+      { v: costEGP, s: dataStyle, t: 'n' }
+    ]);
+  });
+  
+  // صف الإجمالي في النهاية
+  data.push([
+    { v: 'الإجمالي', s: totalStyle }, 
+    { v: '', s: totalStyle }, 
+    { v: totalCount, s: totalStyle, t: 'n' }, 
+    { v: totalMoney, s: totalStyle, t: 'n' }
+  ]);
+  
+  // 4. دمج الخلايا وتنسيق عرض الأعمدة
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  ws['!cols'] = [{wch:35}, {wch:15}, {wch:15}, {wch:18}]; // عرض الأعمدة
+  ws['!merges'] = [ // دمج أول 3 صفوف
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 3 } }, 
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }, 
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 3 } }
+  ];
+  
+  // 5. إنشاء الملف وحفظه باتجاه اليمين لليسار (RTL)
+  const wb = XLSX.utils.book_new();
+  wb.Workbook = { Views: [{ RTL: true }] };
+  XLSX.utils.book_append_sheet(wb, ws, 'Report');
+  XLSX.writeFile(wb, `تقرير_${p.name}_${m.name}.xlsx`);
+
+  showToast('تم تصدير ملف Excel بنجاح ✅', 'success');
+};
+
+// Export Image
+window.exportImage = () => {
+  const el = document.getElementById('dashboard-view') || document.body;
+  html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = `تقرير_${new Date().toISOString().slice(0,10)}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    showToast('تم تصدير الصورة بنجاح ✅', 'success');
+  }).catch(() => {
+    showToast('تعذر تصدير الصورة', 'error');
+  });
+};
+
+// Month Dashboard & Settlement Status
+window.toggleSettlementStatus = async (isSettled) => {
+  const m = appData[currentCategory][currentPersonId].months[currentMonthId];
+  m.isSettled = isSettled;
+  await saveToCloud();
+  renderDashboard();
+  showToast(isSettled ? 'تم تحويل الشهر إلى مُصفى' : 'تم تحويل الشهر إلى معلق', 'info');
+};
+
+function renderDashboard() {
+  const m = appData[currentCategory][currentPersonId].months[currentMonthId];
+  const p = appData[currentCategory][currentPersonId];
+
+  document.getElementById('dashboard-title').textContent = p.name;
+  document.getElementById('dashboard-subtitle').textContent = `شهر: ${m.name}`;
+  document.getElementById('rate-input').value = m.rate || 100;
+
+  // Set Settlement Switch
+  const toggle = document.getElementById('settlement-toggle');
+  const label = document.getElementById('settlement-label');
+  if (toggle && label) {
+    toggle.checked = !!m.isSettled;
+    label.textContent = m.isSettled ? 'مُصفى' : 'معلق';
+    label.className = m.isSettled 
+      ? 'text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700'
+      : 'text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-100 text-amber-700';
+  }
+
+  // Print layout Elements Fix (Line 742 error prevention)
+  const printPerson = document.getElementById('print-person-name');
+  if (printPerson) printPerson.textContent = p.name;
+  const printMonth = document.getElementById('print-month-name');
+  if (printMonth) printMonth.textContent = m.name;
+  const printDate = document.getElementById('print-date');
+  if (printDate) printDate.textContent = new Date().toLocaleDateString('ar-EG');
+
+  const tbody = document.getElementById('files-table-body');
+  tbody.innerHTML = '';
+
+  let totalOriginal = 0;
+  let totalUsed = 0;
+  (m.files || []).slice().sort((a,b)=>(a.sortVal||0)-(b.sortVal||0)).forEach((f) => {
+    const original = f.originalCount || 0;
+    const used = f.usedCount || 0;
+    totalOriginal += original;
+    totalUsed += used;
+    const cost = (used / 1000) * (m.rate || 100);
+
+    const tr = document.createElement('tr');
+    tr.className = 'hover:bg-gray-50/50 dark:hover:bg-slate-800/50 transition';
+    tr.innerHTML = `
+      <td class="p-2.5 font-bold text-gray-800 dark:text-gray-200 truncate max-w-[150px]" title="${f.name}">
+        ${f.name}
+        ${f.manualOverride ? '<span class="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full mr-1 whitespace-nowrap">مُعدل</span>' : ''}
+      </td>
+      <td class="p-2.5 text-center text-gray-400 text-[11px]">${f.dateDisplay || '-'}</td>
+      <td class="p-2.5 text-center text-gray-500">${original.toLocaleString()}</td>
+      <td class="p-2.5 text-center font-black text-primary text-sm">
+        ${used.toLocaleString()}
+        ${f.isAutoAdjusted && !f.manualOverride ? '<i class="fa-solid fa-circle-arrow-up text-orange-500 text-[10px] ml-1" title="تم رفع العدد لـ 1000 تلقائياً (تشييك)"></i>' : ''}
+      </td>
+      <td class="p-2.5 text-center font-bold text-emerald-600">${formatMoney(cost)}</td>
+      <td class="p-2.5 text-center no-print flex items-center justify-center gap-2">
+        <button onclick="openEditFileCount('${f.id}')" class="text-amber-500 hover:text-amber-600 transition" title="تعديل">
+          <i class="fa-solid fa-pen"></i>
+        </button>
+        ${f.manualOverride ? `
+        <button onclick="resetFileCount('${f.id}')" class="text-blue-500 hover:text-blue-600 transition" title="إعادة ضبط للرقم الأصلي">
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>` : ''}
+        <button onclick="deleteFile('${f.id}')" class="text-gray-400 hover:text-red-500 transition" title="حذف">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const totalCost = (totalUsed / 1000) * (m.rate || 100);
+  document.getElementById('total-count-display').textContent = totalUsed.toLocaleString();
+  document.getElementById('total-cost-display').textContent = formatMoney(totalCost);
+  document.getElementById('files-count-badge').textContent = (m.files || []).length;
+  document.getElementById('table-total-original').textContent = totalOriginal.toLocaleString();
+  document.getElementById('table-total-count').textContent = totalUsed.toLocaleString();
+  document.getElementById('table-total-cost').textContent = formatMoney(totalCost);
+
+  // Print values
+  const printRate = document.getElementById('print-rate');
+  if (printRate) printRate.textContent = `${m.rate || 100} EGP`;
+  const printCount = document.getElementById('print-total-count');
+  if (printCount) printCount.textContent = totalUsed.toLocaleString();
+  const printTotalCost = document.getElementById('print-total-cost');
+  if (printTotalCost) printTotalCost.textContent = formatMoney(totalCost);
+
+  document.getElementById('empty-files').classList.toggle('hidden', (m.files || []).length > 0);
+}
+
+window.updateRate = async (val) => {
+  appData[currentCategory][currentPersonId].months[currentMonthId].rate = parseFloat(val) || 0;
+  await saveToCloud();
+  renderDashboard();
+};
+
+window.deleteFile = async (fid) => {
+  showConfirm('حذف الملف', 'هل أنت متأكد من حذف هذا الملف؟', async () => {
+    const m = appData[currentCategory][currentPersonId].months[currentMonthId];
+    m.files = (m.files || []).filter(f => f.id !== fid);
+    await saveToCloud();
+    renderDashboard();
+    showToast('تم حذف الملف', 'info');
+  });
+};
+
+let currentEditingFileId = null;
+
+window.openEditFileCount = (fid) => {
+  const m = appData[currentCategory][currentPersonId].months[currentMonthId];
+  const f = (m.files || []).find(x => x.id === fid);
+  if (!f) return;
+  currentEditingFileId = fid;
+  document.getElementById('edit-count-input').value = f.usedCount || 0;
+  openModal('edit-count-modal');
+};
+
+document.getElementById('save-edit-btn').onclick = async () => {
+  const val = parseInt(document.getElementById('edit-count-input').value);
+  if (isNaN(val) || val < 0) return;
+  const m = appData[currentCategory][currentPersonId].months[currentMonthId];
+  const f = (m.files || []).find(x => x.id === currentEditingFileId);
+  if (f) {
+    f.usedCount = val;
+    f.manualOverride = true;
+    await saveToCloud();
+    renderDashboard();
+    closeModal('edit-count-modal');
+    showToast('تم تعديل العدد بنجاح', 'success');
+  }
+};
+
+window.resetFileCount = async (fid) => {
+  const m = appData[currentCategory][currentPersonId].months[currentMonthId];
+  const f = (m.files || []).find(x => x.id === fid);
+  if (f) {
+    f.usedCount = f.originalCount || 0;
+    if (f.name.includes('تشييك') && f.originalCount < 1000) {
+      f.usedCount = 1000;
+      f.isAutoAdjusted = true;
+    } else {
+      f.isAutoAdjusted = false;
+    }
+    f.manualOverride = false;
+    await saveToCloud();
+    renderDashboard();
+    showToast('تم إعادة الضبط', 'info');
+  }
+};
+
+// File Upload Logic
+window.handleDragOver = (e) => { e.preventDefault(); };
+window.handleDragLeave = () => {};
+window.handleDrop = (e) => { e.preventDefault(); if (e.dataTransfer.files.length) processFiles(e.dataTransfer.files); };
+window.handleFileUpload = (input) => { if (input.files.length) processFiles(input.files); input.value = ''; };
+
+function extractDateSmart(filename) {
+  const monthsAr = {
+    'يناير': 1, 'فبراير': 2, 'مارس': 3, 'ابريل': 4, 'إبريل': 4, 'مايو': 5, 'يونيو': 6,
+    'يوليو': 7, 'اغسطس': 8, 'أغسطس': 8, 'سبتمبر': 9, 'اكتوبر': 10, 'أكتوبر': 10, 'نوفمبر': 11, 'ديسمبر': 12
+  };
+  
+  let match = filename.match(/(\d{1,2})[-/_](\d{1,2})/);
+  if (match) {
+    let d = String(match[1]).padStart(2, '0');
+    let m = String(match[2]).padStart(2, '0');
+    return { dateDisplay: `${d}/${m}`, sortVal: parseInt(match[2]) * 100 + parseInt(match[1]) };
+  }
+  
+  for (const [mName, mNum] of Object.entries(monthsAr)) {
+    const regex = new RegExp(`(\\d{1,2})\\s*${mName}`);
+    const matchAr = filename.match(regex);
+    if (matchAr) {
+      let d = String(matchAr[1]).padStart(2, '0');
+      let m = String(mNum).padStart(2, '0');
+      return { dateDisplay: `${d}/${m}`, sortVal: mNum * 100 + parseInt(matchAr[1]) };
+    }
+  }
+
+  const now = new Date();
+  const d = String(now.getDate()).padStart(2, '0');
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  return { dateDisplay: `${d}/${m}`, sortVal: (now.getMonth() + 1) * 100 + now.getDate() };
+}
+
+async function processFiles(files) {
+  toggleLoader(true);
+  const m = appData[currentCategory][currentPersonId].months[currentMonthId];
+  if (!m.files) m.files = [];
+
+  for (const file of files) {
+    try {
+      const data = await file.arrayBuffer();
+      const wb = XLSX.read(data, { type: 'array' });
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1 });
+      
+      let targetColIdx = 0;
+      if (rows.length > 0) {
+        const header = rows[0] || [];
+        const keywords = ['plate', 'اللوحة', 'لوحة', 'رقم اللوحة'];
+        for (let j = 0; j < header.length; j++) {
+           const cellVal = String(header[j] || '').toLowerCase();
+           if (keywords.some(kw => cellVal.includes(kw))) {
+             targetColIdx = j;
+             break;
+           }
+        }
+      }
+
+      let originalCount = 0;
+      for (let i = 1; i < rows.length; i++) {
+        if (rows[i] && rows[i][targetColIdx] !== undefined && rows[i][targetColIdx] !== null && String(rows[i][targetColIdx]).trim() !== '') {
+           originalCount++;
+        }
+      }
+
+      let usedCount = originalCount;
+      let isAutoAdjusted = false;
+
+      if (file.name.includes('تشييك')) {
+        if (originalCount < 1000) {
+          usedCount = 1000;
+          isAutoAdjusted = true;
+        }
+      }
+
+      const dateInfo = extractDateSmart(file.name);
+
+      m.files.push({
+        id: 'f_' + Date.now() + Math.random(),
+        name: file.name,
+        originalCount: originalCount,
+        usedCount: usedCount,
+        dateDisplay: dateInfo.dateDisplay,
+        sortVal: dateInfo.sortVal,
+        isAutoAdjusted: isAutoAdjusted
+      });
+    } catch(e) { showToast('تعذر قراءة الملف: ' + file.name, 'error'); }
+  }
+
+  await saveToCloud();
+  toggleLoader(false);
+  renderDashboard();
+  showToast('تمت إضافة الملفات بنجاح', 'success');
+
+  if (Notification.permission === 'granted') {
+    new Notification('لوحتي فخور بك! 🎉', {
+      body: 'عاش يا بطل! تم رفع وتسجيل الملفات بنجاح، استمر في العمل.',
+      icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0idXJsKCNnKSIvPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzhiNWNmNiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2VjNDg5OSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGQ9Ik0xNjAgMTYwaDE5Mk0xNjAgMjU2aDE5Mk0xNjAgMzUyaDEyOCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjQ4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4='
+    });
+  }
+}
+
+// Chart
+window.setPersonChartType = (type) => {
+  personChartType = type;
+  document.getElementById('pchart-bar').className = type === 'bar' ? 'px-2 py-0.5 rounded-full font-bold bg-primary text-white' : 'px-2 py-0.5 rounded-full font-bold bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-300';
+  document.getElementById('pchart-line').className = type === 'line' ? 'px-2 py-0.5 rounded-full font-bold bg-primary text-white' : 'px-2 py-0.5 rounded-full font-bold bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-300';
+  renderPersonChart();
+};
+
+function renderPersonChart() {
+  const person = appData[currentCategory]?.[currentPersonId];
+  const section = document.getElementById('person-chart-section');
+  if (!person?.months || Object.keys(person.months).length < 2) {
+    section?.classList.add('hidden');
+    return;
+  }
+
+  section.classList.remove('hidden');
+  const labels = [], data = [];
+  Object.values(person.months).forEach(m => {
+    labels.push(m.name);
+    data.push((m.files || []).reduce((s, f) => s + (f.usedCount || 0), 0));
+  });
+
+  const ctx = document.getElementById('personPerfChart');
+  if (!ctx) return;
+  if (charts['personPerfChart']) charts['personPerfChart'].destroy();
+
+  charts['personPerfChart'] = new Chart(ctx, {
+    type: personChartType,
+    data: {
+      labels,
+      datasets: [{
+        label: 'عدد اللوح',
+        data,
+        backgroundColor: 'rgba(79, 108, 247, 0.6)',
+        borderColor: '#4F6CF7',
+        borderWidth: 2,
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+// Reports
+window.showDayReport = () => {
+  showView('day-view');
+};
+
+window.generateDayReport = () => {
+  const dt = document.getElementById('report-date-input').value;
+  if (!dt) return showToast('اختر تاريخ', 'error');
+  const d = new Date(dt);
+  const target = `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+
+  const tbody = document.getElementById('day-report-table');
+  tbody.innerHTML = '';
+  let totalP = 0, totalC = 0;
+
+  ['delegates','unloaders'].forEach(cat => {
+    Object.values(appData[cat] || {}).forEach(person => {
+      Object.values(person.months || {}).forEach(m => {
+        (m.files || []).forEach(f => {
+          if (f.dateDisplay === target) {
+            const cost = (f.usedCount / 1000) * (m.rate || 100);
+            totalP += f.usedCount;
+            totalC += cost;
+
+            tbody.innerHTML += `
+              <tr>
+                <td class="p-2.5 font-bold text-gray-800 dark:text-gray-200">${person.name}</td>
+                <td class="p-2.5 text-center text-xs">${cat==='delegates'?'مندوب':'مفرغ'}</td>
+                <td class="p-2.5 text-center font-bold text-primary">${f.usedCount.toLocaleString()}</td>
+                <td class="p-2.5 text-center font-bold text-emerald-600">${formatMoney(cost)}</td>
+              </tr>
+            `;
+          }
+        });
+      });
+    });
+  });
+
+  document.getElementById('day-total-count').textContent = totalP.toLocaleString();
+  document.getElementById('day-total-cost').textContent = formatMoney(totalC);
+  document.getElementById('day-report-content').classList.remove('hidden');
+};
+
+window.showMonthlyBest = () => {
+  showView('monthly-best-view');
+  const tbody = document.getElementById('monthly-performers-table');
+  tbody.innerHTML = '';
+
+  monthsAr.forEach((mName, idx) => {
+    let bestPerson = '-', maxCount = 0;
+    ['delegates','unloaders'].forEach(cat => {
+      Object.values(appData[cat] || {}).forEach(person => {
+        Object.values(person.months || {}).forEach(m => {
+          if ((m.name || '').includes(mName)) {
+            const count = (m.files || []).reduce((s,f) => s + (f.usedCount||0), 0);
+            if (count > maxCount) { maxCount = count; bestPerson = person.name; }
+          }
+        });
+      });
+    });
+
+    if (maxCount > 0) {
+      tbody.innerHTML += `
+        <tr>
+          <td class="p-2.5 font-bold">${idx + 1}</td>
+          <td class="p-2.5 font-bold text-gray-800 dark:text-white">${mName}</td>
+          <td class="p-2.5 text-emerald-600 font-bold">${bestPerson}</td>
+          <td class="p-2.5 text-center font-black text-primary">${maxCount.toLocaleString()}</td>
+        </tr>
+      `;
+    }
+  });
+};
+
+// Admin
+window.showAdminPanel = () => {
+  showView('admin-dashboard');
+  loadUsersList();
+};
+
+async function loadUsersList() {
+  const tbody = document.getElementById('admin-users-list');
+  tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center">جاري التحميل...</td></tr>`;
+  try {
+    const snap = await getDocs(collection(db, 'artifacts', appNamespace, 'public', 'data', 'users_directory'));
+    tbody.innerHTML = '';
+    snap.forEach(d => {
+      const u = d.data();
+      tbody.innerHTML += `
+        <tr>
+          <td class="p-2.5 font-bold">${u.name || '-'}</td>
+          <td class="p-2.5 text-gray-400 dir-ltr text-left">${u.email}</td>
+          <td class="p-2.5">${u.isBanned ? '<span class="text-red-500 font-bold">محظور</span>' : '<span class="text-emerald-500 font-bold">نشط</span>'}</td>
+          <td class="p-2.5 font-bold">${u.role || 'user'}</td>
+          <td class="p-2.5 text-center flex items-center justify-center gap-1">
+            <button onclick="viewUser('${u.email}', '${u.name}')" class="btn-primary text-[10px] py-1 bg-gradient-to-r from-orange-400 to-orange-500 shadow-none">
+              مراقبة
+            </button>
+            <button onclick="toggleBanUser('${u.email}', ${!u.isBanned})" class="btn-secondary text-[10px] py-1">
+              ${u.isBanned ? 'فك الحظر' : 'حظر'}
+            </button>
+          </td>
+        </tr>
+      `;
+    });
+  } catch(e) { tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">فشل التحميل</td></tr>`; }
+}
+
+window.toggleBanUser = async (email, isBanned) => {
+  try {
+    await updateDoc(doc(db, 'artifacts', appNamespace, 'public', 'data', 'users_directory', userKey(email)), { isBanned });
+    showToast('تمت معالجة الطلب', 'success');
+    loadUsersList();
+  } catch(e) { showToast('تعذر إجراء التغيير', 'error'); }
+};
+
+// Auth forms
+document.getElementById('login-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  const spinner = document.getElementById('login-spinner');
+  const err = document.getElementById('login-error');
+  err.classList.add('hidden');
+  btn.disabled = true;
+  spinner.classList.remove('hidden');
+
+  try {
+    await signInWithEmailAndPassword(auth, document.getElementById('login-email').value, document.getElementById('login-pass').value);
+  } catch(er) {
+    btn.disabled = false;
+    spinner.classList.add('hidden');
+    if (er?.code === 'auth/unauthorized-domain') showDomainAlert();
+    const msgs = {
+      'auth/user-not-found': 'اسم المستخدم أو البريد غير مسجل',
+      'auth/wrong-password': 'كلمة المرور غير صحيحة',
+      'auth/invalid-credential': 'بيانات الدخول غير صحيحة',
+      'auth/too-many-requests': 'تجاوزت المحاولات، انتظر دقيقة'
+    };
+    err.textContent = msgs[er?.code] || 'خطأ في تسجيل الدخول: ' + er.message;
+    err.classList.remove('hidden');
+  }
+};
+
+document.getElementById('register-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const err = document.getElementById('reg-error'), ok = document.getElementById('reg-success');
+  err.classList.add('hidden'); ok.classList.add('hidden');
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, document.getElementById('reg-email').value, document.getElementById('reg-pass').value);
+    await sendEmailVerification(cred.user);
+    const email = userKey(cred.user.email);
+    const name = document.getElementById('reg-name').value.trim() || 'مستخدم جديد';
+    await setDoc(doc(db, 'artifacts', appNamespace, 'public', 'data', 'users_directory', email), { name, email, role: 'user', isBanned: false, createdAt: new Date().toISOString() });
+    await setDoc(doc(db, 'artifacts', appNamespace, 'public', 'data', 'users_data', email), { data: JSON.stringify({ delegates: {}, unloaders: {} }) });
+    ok.classList.remove('hidden');
+  } catch(er) {
+    if (er?.code === 'auth/unauthorized-domain') showDomainAlert();
+    err.textContent = 'تعذر إنشاء الحساب: ' + (er.message || '');
+    err.classList.remove('hidden');
+  }
+};
+
+document.getElementById('reset-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('reset-msg');
+  try {
+    await sendPasswordResetEmail(auth, document.getElementById('reset-email').value);
+    msg.textContent = 'تم إرسال رابط الاستعادة إلى بريدك ✅';
+    msg.className = 'text-xs text-center p-2 rounded-xl bg-emerald-50 text-emerald-600 block';
+  } catch(er) {
+    msg.textContent = 'تعذر الإرسال: ' + er.message;
+    msg.className = 'text-xs text-center p-2 rounded-xl bg-red-50 text-red-600 block';
+  }
+};
+
+// Auth Observer
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    const email = userKey(user.email);
+
+    if (email !== OWNER_EMAIL && !user.emailVerified) {
+      document.getElementById('verify-email-display').textContent = user.email;
+      document.getElementById('verification-overlay').classList.remove('hidden');
+      document.getElementById('auth-overlay').classList.add('hidden');
+      toggleLoader(false);
+      return;
+    }
+
+    try {
+      const ref = doc(db, 'artifacts', appNamespace, 'public', 'data', 'users_directory', email);
+      const snap = await getDoc(ref);
+      if (snap.exists() && snap.data().isBanned) {
+        document.getElementById('banned-overlay').classList.remove('hidden');
+        document.getElementById('auth-overlay').classList.add('hidden');
+        toggleLoader(false);
+        return;
+      }
+
+      currentUser = snap.exists() ? { ...snap.data(), id: email } : { id: email, email, name: user.displayName || 'مستخدم', role: 'user' };
+
+      document.getElementById('auth-overlay').classList.add('hidden');
+      document.getElementById('verification-overlay').classList.add('hidden');
+      document.getElementById('banned-overlay').classList.add('hidden');
+      document.getElementById('main-app').classList.remove('hidden');
+
+      if (['admin','owner'].includes(currentUser.role) || email === OWNER_EMAIL) {
+        document.getElementById('nav-admin').classList.remove('hidden');
+      }
+
+      document.getElementById('welcome-name').textContent = currentUser.name || 'مستخدم';
+      document.getElementById('sidebar-username').textContent = currentUser.name || 'مستخدم';
+      document.getElementById('sidebar-profile-initials').textContent = (currentUser.name || '؟').charAt(0);
+
+      await loadDataCloud();
+      goHome();
+
+      if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+        Notification.requestPermission();
+      }
+
+      if (appLastUpdated) {
+        const lastUpdatedDate = new Date(appLastUpdated);
+        const now = new Date();
+        const diffMs = now - lastUpdatedDate;
+        const diffHours = diffMs / (1000 * 60 * 60);
+        
+        if (diffHours > 24) {
+          const todayString = now.toDateString();
+          const lastSadNotification = localStorage.getItem('last_sad_notification');
+          if (lastSadNotification !== todayString) {
+            if (Notification.permission === 'granted') {
+              new Notification('لوحتي زعلان ومفتقدك 🥺', {
+                body: 'مفيش شغل اترفع امبارح ومكانك كان فاضي، مستنيك تعوضها وتكسر الدنيا النهارده!',
+                icon: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9IjExMiIgZmlsbD0idXJsKCNnKSIvPjxkZWZzPjxsaW5lYXJHcmFkaWVudCBpZD0iZyIgeDE9IjAlIiB5MT0iMCUiIHgyPSIxMDAlIiB5Mj0iMTAwJSI+PHN0b3Agb2Zmc2V0PSIwJSIgc3RvcC1jb2xvcj0iIzhiNWNmNiIvPjxzdG9wIG9mZnNldD0iMTAwJSIgc3RvcC1jb2xvcj0iI2VjNDg5OSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxwYXRoIGQ9Ik0xNjAgMTYwaDE5Mk0xNjAgMjU2aDE5Mk0xNjAgMzUyaDEyOCIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjQ4IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4='
+              });
+              localStorage.setItem('last_sad_notification', todayString);
+            }
+          }
+        }
+      }
+    } catch(e) { showDomainAlert(); toggleLoader(false); }
+  } else {
+    toggleLoader(false);
+    document.getElementById('auth-overlay').classList.remove('hidden');
+    document.getElementById('main-app').classList.add('hidden');
+  }
+});
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>

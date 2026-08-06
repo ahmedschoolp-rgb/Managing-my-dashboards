@@ -1,0 +1,6 @@
+{
+  "name": "لوحتي - إدارة إنتاجية اللوحات",
+  "description": "نظام زجاجي متكامل لإدارة ومتابعة المناديب والمفرغين وتقارير اللوح",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
