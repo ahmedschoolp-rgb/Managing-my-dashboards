@@ -3,9 +3,9 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
+  return self.clients.claim();
 });
 
-self.addEventListener('push', (event) => {
-  // مستقبلية للإشعارات
+self.addEventListener('fetch', (event) => {
+  event.respondWith(fetch(event.request));
 });
