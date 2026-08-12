@@ -37,7 +37,7 @@ function App() {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('الكل')
   const [showCreate, setShowCreate] = useState(false)
-  const [dark, setDark] = useState(true)
+  const [dark, setDark] = useState(false)
 
   const filteredDashboards = useMemo(() => dashboards.filter((dashboard) => {
     const matchesQuery = `${dashboard.title} ${dashboard.description}`.includes(query)
